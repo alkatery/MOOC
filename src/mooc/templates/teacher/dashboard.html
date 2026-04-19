@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}لوحة المعلم{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <div class="layout-split">
+    <aside class="sidebar">
+      <h2>المعلم</h2>
+      <nav aria-label="قائمة المعلم">
+        <a href="/teacher" aria-current="page">الرئيسية</a>
+        <a href="/teacher/courses/new">+ مقرر جديد</a>
+        <a href="/catalog">تصفح المقررات</a>
+        <a href="/logout">تسجيل الخروج</a>
+      </nav>
+    </aside>
+    <div>
+      <h1>أهلاً، أ. {{ user.display_name }}</h1>
+      <div class="grid grid-4">
+        <div class="stat"><div class="value">{{ courses|length }}</div><div class="label">إجمالي المقررات</div></div>
+        <div class="stat"><div class="value">{{ stats.published }}</div><div class="label">منشورة</div></div>
+        <div class="stat"><div class="value">{{ stats.in_review }}</div><div class="label">تحت المراجعة</div></div>
+        <div class="stat"><div class="value">{{ total_students }}</div><div class="label">إجمالي الطلاب</div></div>
+      </div>
+
+      <h2 class="mt-4">مقرراتي</h2>
+      <a class="btn mb-2" href="/teacher/courses/new">+ إنشاء مقرر جديد</a>
+
+      {% if courses %}
+        <table>
+          <thead><tr><th>الرمز</th><th>العنوان</th><th>الحالة</th><th>عدد الطلاب</th><th></th></tr></thead>
+          <tbody>
+            {% for course in courses %}
+              <tr>
+                <td><code>{{ course.code }}</code></td>
+                <td>{{ course.title_ar }}</td>
+                <td><span class="badge {{ course.status.value }}">{{ course.status.value }}</span></td>
+                <td>{{ course.enrollments|length }}</td>
+                <td>
+                  <a class="btn btn-sm" href="/teacher/courses/{{ course.id }}">تحرير</a>
+                  <a class="btn btn-sm btn-outline" href="/teacher/courses/{{ course.id }}/students">الطلاب</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="alert alert-info">لم تُنشئ أي مقرر بعد. <a href="/teacher/courses/new">ابدأ الآن</a></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

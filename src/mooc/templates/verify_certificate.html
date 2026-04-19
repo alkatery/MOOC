@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}التحقق من شهادة{% endblock %}
+{% block content %}
+<section class="container mt-4" style="max-width: 640px;">
+  <div class="card">
+    <h1>التحقق من شهادة</h1>
+    <p class="muted">أدخل رمز التحقق الموجود على الشهادة.</p>
+    <form method="get" action="/api/certificates/verify" class="stacked" onsubmit="event.preventDefault(); verify(this);">
+      <div class="form-field">
+        <label for="code">رمز التحقق</label>
+        <input type="text" name="code" id="code" required placeholder="MOOC-XXXXXXXXXXXXX">
+      </div>
+      <button class="btn" type="submit">تحقق</button>
+    </form>
+    <div id="result" class="mt-3" aria-live="polite"></div>
+  </div>
+</section>
+<script>
+async function verify(form) {
+  const code = form.code.value.trim();
+  const out = document.getElementById('result');
+  out.innerHTML = '';
+  try {
+    const r = await fetch('/api/certificates/verify/' + encodeURIComponent(code));
+    if (!r.ok) {
+      out.innerHTML = '<div class="alert alert-danger">الشهادة غير صالحة أو الرمز غير صحيح.</div>';
+      return;
+    }
+    const data = await r.json();
+    out.innerHTML = `
+      <div class="alert alert-success">
+        <h3>شهادة سارية ✓</h3>
+        <p><strong>الاسم:</strong> ${data.holder}</p>
+        <p><strong>المقرر:</strong> ${data.course_title} (${data.course_code})</p>
+        <p><strong>الدرجة:</strong> ${data.grade}٪</p>
+        <p><strong>تاريخ الإصدار:</strong> ${new Date(data.issued_at).toLocaleDateString('ar-SA')}</p>
+      </div>`;
+  } catch (e) {
+    out.innerHTML = '<div class="alert alert-danger">خطأ في الاتصال.</div>';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}إنشاء حساب — {{ settings.platform_name_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4" style="max-width: 640px;">
+  <div class="card">
+    <h1>إنشاء حساب جديد</h1>
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+    <form method="post" action="/register" class="stacked">
+      <div class="form-field">
+        <label for="full_name_ar">الاسم الكامل</label>
+        <input type="text" name="full_name_ar" id="full_name_ar" required>
+      </div>
+      <div class="form-field">
+        <label for="email">البريد الإلكتروني</label>
+        <input type="email" name="email" id="email" required autocomplete="email">
+      </div>
+      <div class="form-field">
+        <label for="password">كلمة المرور</label>
+        <input type="password" name="password" id="password" required minlength="8" autocomplete="new-password">
+        <span class="form-help">8 أحرف على الأقل وتحتوي حروف وأرقام.</span>
+      </div>
+      <div class="form-field">
+        <label for="password_confirm">تأكيد كلمة المرور</label>
+        <input type="password" name="password_confirm" id="password_confirm" required autocomplete="new-password">
+      </div>
+      <div class="form-field">
+        <label for="role">نوع الحساب</label>
+        <select name="role" id="role">
+          <option value="student">طالب</option>
+          <option value="instructor">معلم</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>
+          <input type="checkbox" name="consent" id="consent">
+          أوافق على <a href="/privacy">سياسة الخصوصية</a> وإقامة البيانات داخل المملكة.
+        </label>
+      </div>
+      <button class="btn" type="submit">إنشاء الحساب</button>
+    </form>
+    <p class="mt-2">لديك حساب بالفعل؟ <a href="/login">سجّل الدخول</a></p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}الرئيسية — {{ settings.platform_name_ar }}{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="container">
+    <span class="nelc-badge">متوافقة مع معايير NELC</span>
+    <h1>تعلّم بلا حدود. مقررات إلكترونية معتمدة.</h1>
+    <p>
+      منصة مساقات إلكترونية مفتوحة تتيح لك الدراسة مع أفضل المعلمين،
+      وتتبّع تقدمك، واستلام شهادات موثقة تتوافق مع معايير المركز الوطني للتعليم الإلكتروني.
+    </p>
+    <div class="flex" style="justify-content:center; gap:1rem;">
+      <a class="btn btn-accent" href="/catalog">استعراض المقررات</a>
+      {% if not user %}
+        <a class="btn btn-outline" href="/register" style="color:#fff;border-color:#fff;">ابدأ مجاناً</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="container mt-4">
+  <div class="grid grid-4">
+    <div class="stat">
+      <div class="value">{{ stats.courses }}</div>
+      <div class="label">مقرر منشور</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ stats.categories }}</div>
+      <div class="label">تصنيف معرفي</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ nelc_total_criteria }}</div>
+      <div class="label">معيار جودة NELC</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ nelc_domains|length }}</div>
+      <div class="label">مجالات جودة</div>
+    </div>
+  </div>
+</section>
+
+<section class="container mt-4">
+  <h2>أحدث المقررات</h2>
+  {% if courses %}
+    <div class="grid grid-3">
+      {% for course in courses %}
+        <article class="course-card">
+          <div class="cover">{{ course.code }}</div>
+          <div class="body">
+            <h3><a href="/courses/{{ course.id }}">{{ course.title_ar }}</a></h3>
+            <p>{{ course.short_description_ar }}</p>
+            <div class="meta">
+              <span>المدة: {{ course.duration_hours }} س</span>
+              <span>المستوى: {{ course.level.value }}</span>
+              <span>{% if course.is_free %}مجاني{% else %}{{ course.price }} ريال{% endif %}</span>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">لا توجد مقررات منشورة بعد.</p>
+  {% endif %}
+</section>
+
+<section class="container mt-4">
+  <div class="card">
+    <h2>لماذا تثق بهذه المنصة؟</h2>
+    <ul>
+      <li>تصميم ومحتوى وفق إطار جودة <strong>NELC K-12 Excellence Standards v2.0</strong> بـ {{ nelc_total_criteria }} معياراً.</li>
+      <li>إتاحة كاملة: ترجمة نصية، تباين عالٍ، دعم قارئ الشاشة، التزام WCAG 2.1 AA.</li>
+      <li>تتبع تقدّم الطالب بمعايير <code>xAPI</code> وتوافق مع <code>SCORM 1.2</code>.</li>
+      <li>شهادات موثقة برموز تحقق قابلة للمشاركة.</li>
+      <li>منتدى نقاش نشط لكل مقرر وفرصة للتفاعل مع المعلم.</li>
+    </ul>
+  </div>
+</section>
+
+{% endblock %}

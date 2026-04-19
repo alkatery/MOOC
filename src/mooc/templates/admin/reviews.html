@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}مراجعات الجودة{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/admin">← لوحة التحكم</a></nav>
+  <h1>مراجعات جودة المقررات (معايير NELC)</h1>
+  <p class="muted">راجع كل مقرر وفق المعايير الثمانية ({{ 377 }} معياراً).</p>
+  {% if courses %}
+    <table>
+      <thead><tr><th>الرمز</th><th>العنوان</th><th>المعلم</th><th>الحالة</th><th></th></tr></thead>
+      <tbody>
+        {% for c in courses %}
+          <tr>
+            <td><code>{{ c.code }}</code></td>
+            <td>{{ c.title_ar }}</td>
+            <td>{{ c.instructor.display_name }}</td>
+            <td><span class="badge {{ c.status.value }}">{{ c.status.value }}</span></td>
+            <td><a class="btn btn-sm" href="/admin/reviews/{{ c.id }}">فتح المراجعة</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">لا توجد مراجعات في الانتظار.</div>
+  {% endif %}
+</section>
+{% endblock %}

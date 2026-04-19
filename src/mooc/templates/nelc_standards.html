@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}معايير NELC{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <h1>معايير جودة المركز الوطني للتعليم الإلكتروني (NELC)</h1>
+  <p>
+    تعتمد هذه المنصة على
+    <strong>"معايير التميز في التعليم الإلكتروني — التعليم العام (K-12)"</strong>
+    الصادرة عن <a href="https://nelc.gov.sa" target="_blank" rel="noopener noreferrer">المركز الوطني للتعليم الإلكتروني (NELC)</a>،
+    الإصدار 2.0 — ديسمبر 2023 (مرخصة تحت CC BY-NC-SA 4.0).
+  </p>
+  <p>
+    تشمل الإطار <strong>{{ nelc_domains|length }}</strong> مجالات رئيسية،
+    <strong>{{ nelc_domains|sum(attribute="subdomain_count") }}</strong> محوراً فرعياً،
+    و<strong>{{ nelc_total_criteria }}</strong> معياراً للجودة.
+  </p>
+  <p>
+    يتم تقييم كل معيار وفق سلم ثلاثي: <em>ناشئ</em> = 1،
+    <em>متحقق</em> = 2، <em>مثالي</em> = 3.
+  </p>
+
+  {% for domain in nelc_domains %}
+    <article class="card mb-2">
+      <h2>{{ domain.code }} — {{ domain.title_ar }} <span class="muted">({{ domain.title_en }})</span></h2>
+      <p>{{ domain.description_ar }}</p>
+      <p class="muted">{{ domain.subdomain_count }} محور · {{ domain.criteria_count }} معيار</p>
+      <details>
+        <summary>عرض المحاور</summary>
+        <ul>
+          {% for sd in domain.subdomains %}
+            <li>
+              <strong>{{ sd.code }}</strong> — {{ sd.title_ar }}
+              <span class="muted">({{ sd.criteria_count }} معايير)</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </details>
+    </article>
+  {% endfor %}
+</section>
+{% endblock %}

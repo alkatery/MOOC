@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}لوحة الإدارة{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <div class="layout-split">
+    <aside class="sidebar">
+      <h2>الإدارة</h2>
+      <nav aria-label="قائمة الإدارة">
+        <a href="/admin" aria-current="page">لوحة التحكم</a>
+        <a href="/admin/users">المستخدمون</a>
+        <a href="/admin/courses">المقررات</a>
+        <a href="/admin/reviews">مراجعة الجودة (NELC)</a>
+        <a href="/admin/reports/compliance">تقرير الامتثال</a>
+        <a href="/admin/audit">سجل التدقيق</a>
+        <a href="/logout">تسجيل الخروج</a>
+      </nav>
+    </aside>
+    <div>
+      <h1>لوحة تحكم الإدارة</h1>
+      <p class="muted">مرحباً {{ user.display_name }} — إشراف كامل على المنصة ومعايير الجودة.</p>
+
+      <div class="grid grid-4">
+        <div class="stat"><div class="value">{{ stats.users }}</div><div class="label">المستخدمون</div></div>
+        <div class="stat"><div class="value">{{ stats.students }}</div><div class="label">الطلاب</div></div>
+        <div class="stat"><div class="value">{{ stats.instructors }}</div><div class="label">المعلمون</div></div>
+        <div class="stat"><div class="value">{{ stats.courses_total }}</div><div class="label">إجمالي المقررات</div></div>
+        <div class="stat"><div class="value">{{ stats.courses_published }}</div><div class="label">منشورة</div></div>
+        <div class="stat"><div class="value">{{ stats.courses_review }}</div><div class="label">تحت المراجعة</div></div>
+        <div class="stat"><div class="value">{{ stats.enrollments }}</div><div class="label">التسجيلات</div></div>
+        <div class="stat"><div class="value">{{ stats.certificates }}</div><div class="label">الشهادات</div></div>
+      </div>
+
+      <h2 class="mt-4">إطار جودة NELC</h2>
+      <div class="grid grid-3">
+        <div class="stat"><div class="value">{{ stats.nelc_domains }}</div><div class="label">مجالات (K.1–K.8)</div></div>
+        <div class="stat"><div class="value">{{ stats.nelc_criteria }}</div><div class="label">معايير جودة</div></div>
+        <div class="stat"><div class="value">{{ stats.xapi_statements }}</div><div class="label">بيانات xAPI مسجلة</div></div>
+      </div>
+
+      <h2 class="mt-4">مقررات تنتظر المراجعة</h2>
+      {% if pending_reviews %}
+        <table>
+          <thead><tr><th>رمز</th><th>العنوان</th><th>المعلم</th><th></th></tr></thead>
+          <tbody>
+            {% for course in pending_reviews %}
+              <tr>
+                <td><code>{{ course.code }}</code></td>
+                <td>{{ course.title_ar }}</td>
+                <td>{{ course.instructor.display_name }}</td>
+                <td><a class="btn btn-sm" href="/admin/reviews/{{ course.id }}">راجع</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">لا توجد مقررات قيد المراجعة.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

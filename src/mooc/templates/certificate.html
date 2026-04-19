@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}شهادة {{ holder.display_name }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <div class="certificate">
+    <p style="font-size:1.2rem;color:var(--text-muted);">شهادة إتمام مقرر</p>
+    <h1>{{ settings.platform_name_ar }}</h1>
+    <p>تشهد المنصة بأن</p>
+    <div class="holder">{{ holder.display_name }}</div>
+    <p>قد أتمّ بنجاح المقرر:</p>
+    <h2>{{ course.title_ar }}</h2>
+    <p>رمز المقرر: <strong>{{ course.code }}</strong></p>
+    <p>الدرجة النهائية: <strong>{{ certificate.grade }}٪</strong></p>
+    <p>تاريخ الإصدار: {{ certificate.issued_at.strftime("%Y-%m-%d") }}</p>
+    {% if certificate.expires_at %}
+      <p>صالحة حتى: {{ certificate.expires_at.strftime("%Y-%m-%d") }}</p>
+    {% endif %}
+    <div class="code">رمز التحقق: {{ certificate.verification_code }}</div>
+    <p class="muted mt-3">يمكنك التحقق من صحة هذه الشهادة عبر الرابط:<br>
+      <code>{{ request.url.scheme }}://{{ request.url.netloc }}/verify-certificate</code>
+    </p>
+  </div>
+</section>
+{% endblock %}

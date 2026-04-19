@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}تحرير: {{ course.title_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/teacher">← العودة للوحة المعلم</a></nav>
+
+  <article class="card">
+    <span class="badge {{ course.status.value }}">{{ course.status.value }}</span>
+    <h1>{{ course.title_ar }}</h1>
+    <p class="muted">رمز المقرر: {{ course.code }}</p>
+
+    <div class="flex flex-wrap">
+      <a class="btn btn-sm btn-outline" href="/courses/{{ course.id }}">عرض كمستخدم</a>
+      <a class="btn btn-sm btn-outline" href="/teacher/courses/{{ course.id }}/students">الطلاب المسجلون</a>
+      {% if course.status.value == "draft" %}
+        <form method="post" action="/teacher/courses/{{ course.id }}/submit-for-review" style="display:inline">
+          <button class="btn btn-sm btn-accent">إرسال للمراجعة (NELC)</button>
+        </form>
+      {% endif %}
+    </div>
+  </article>
+
+  <h2 class="mt-4">وحدات المقرر</h2>
+  {% for module in course.modules %}
+    <article class="card mb-2">
+      <h3>{{ module.order_index }}. {{ module.title_ar }}</h3>
+      {% if module.description_ar %}<p class="muted">{{ module.description_ar }}</p>{% endif %}
+      <ul>
+        {% for lesson in module.lessons %}
+          <li>
+            <strong>{{ lesson.title_ar }}</strong>
+            <span class="badge">{{ lesson.lesson_type.value }}</span>
+            <span class="muted">{{ lesson.duration_minutes }} د</span>
+            {% if lesson.quiz %}
+              <a href="/teacher/lessons/{{ lesson.id }}/quiz">✎ تحرير الاختبار</a>
+            {% else %}
+              <a href="/teacher/lessons/{{ lesson.id }}/quiz">+ إضافة اختبار</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+
+      <details class="mt-2">
+        <summary>+ إضافة درس لهذه الوحدة</summary>
+        <form method="post" action="/teacher/modules/{{ module.id }}/lessons" class="stacked mt-2">
+          <div class="form-field">
+            <label>عنوان الدرس</label>
+            <input type="text" name="title_ar" required>
+          </div>
+          <div class="form-field">
+            <label>نوع الدرس</label>
+            <select name="lesson_type">
+              {% for t in lesson_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+            </select>
+            <span class="form-help">
+              video (فيديو) · text (نص) · pdf · scorm · interactive (تفاعلي) · external (رابط خارجي) · live (جلسة مباشرة)
+            </span>
+          </div>
+          <div class="form-field">
+            <label>المحتوى النصي</label>
+            <textarea name="content" placeholder="للنصوص أو التدريبات التفاعلية"></textarea>
+          </div>
+          <div class="form-field">
+            <label>رابط المورد (فيديو / PDF / SCORM)</label>
+            <input type="url" name="resource_url">
+          </div>
+          <div class="form-field">
+            <label>المدة (دقائق)</label>
+            <input type="number" name="duration_minutes" min="0" value="0">
+          </div>
+          <div class="form-field">
+            <label>
+              <input type="checkbox" name="has_transcript">
+              يحتوي على نص مكتوب (مطلوب للإتاحة)
+            </label>
+          </div>
+          <div class="form-field">
+            <label>النص المكتوب</label>
+            <textarea name="transcript_text"></textarea>
+          </div>
+          <button class="btn btn-sm" type="submit">حفظ الدرس</button>
+        </form>
+      </details>
+    </article>
+  {% endfor %}
+
+  <details class="mt-2">
+    <summary>+ إضافة وحدة جديدة</summary>
+    <form method="post" action="/teacher/courses/{{ course.id }}/modules" class="stacked mt-2">
+      <div class="form-field">
+        <label>عنوان الوحدة</label>
+        <input type="text" name="title_ar" required>
+      </div>
+      <div class="form-field">
+        <label>الوصف</label>
+        <textarea name="description_ar"></textarea>
+      </div>
+      <button class="btn btn-sm" type="submit">إضافة الوحدة</button>
+    </form>
+  </details>
+
+  <h2 class="mt-4">الواجبات</h2>
+  <details>
+    <summary>+ إضافة واجب</summary>
+    <form method="post" action="/teacher/courses/{{ course.id }}/assignments" class="stacked mt-2">
+      <div class="form-field">
+        <label>عنوان الواجب</label>
+        <input type="text" name="title_ar" required>
+      </div>
+      <div class="form-field">
+        <label>التعليمات</label>
+        <textarea name="instructions_ar" required></textarea>
+      </div>
+      <div class="form-field">
+        <label>الدرجة القصوى</label>
+        <input type="number" name="max_score" step="0.5" value="100">
+      </div>
+      <div class="form-field">
+        <label>تاريخ التسليم (YYYY-MM-DDTHH:MM)</label>
+        <input type="datetime-local" name="due_at">
+      </div>
+      <button class="btn btn-sm" type="submit">حفظ الواجب</button>
+    </form>
+  </details>
+</section>
+{% endblock %}

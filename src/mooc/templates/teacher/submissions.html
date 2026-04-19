@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}تسليمات الواجبات{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/teacher/courses/{{ course.id }}">← العودة للمقرر</a></nav>
+  <h1>تسليمات الواجبات — {{ course.title_ar }}</h1>
+  {% if submissions %}
+    {% for s in submissions %}
+      <article class="card mb-2">
+        <h3>تسليم #{{ s.id }}</h3>
+        <p class="muted">المستخدم: {{ s.user_id }} · التاريخ: {{ s.submitted_at.strftime("%Y-%m-%d %H:%M") }}</p>
+        <details><summary>المحتوى</summary><pre style="white-space:pre-wrap">{{ s.content }}</pre></details>
+        {% if s.score is none %}
+          <form method="post" action="/teacher/submissions/{{ s.id }}/grade" class="stacked">
+            <div class="form-field"><label>الدرجة (من {{ s.assignment.max_score }})</label><input type="number" name="score" min="0" step="0.5" required></div>
+            <div class="form-field"><label>التغذية الراجعة</label><textarea name="feedback_ar"></textarea></div>
+            <button class="btn btn-sm" type="submit">حفظ التقييم</button>
+          </form>
+        {% else %}
+          <div class="alert alert-success">الدرجة: {{ s.score }} — {{ s.feedback_ar or "" }}</div>
+        {% endif %}
+      </article>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info">لا توجد تسليمات.</div>
+  {% endif %}
+</section>
+{% endblock %}

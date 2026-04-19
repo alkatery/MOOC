@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}نتيجة {{ quiz.title_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <article class="card text-center">
+    <h1>نتيجة الاختبار</h1>
+    <p class="muted">{{ quiz.title_ar }}</p>
+    <div style="font-size:4rem;font-weight:700;color:{% if attempt.passed %}var(--success){% else %}var(--danger){% endif %};">
+      {{ attempt.score }} / {{ attempt.max_score }}
+    </div>
+    {% if attempt.passed %}
+      <div class="alert alert-success">تهانينا! لقد اجتزت الاختبار بنجاح.</div>
+    {% else %}
+      <div class="alert alert-danger">للأسف لم تجتز الاختبار هذه المرة. حاول مرة أخرى بعد مراجعة الدرس.</div>
+    {% endif %}
+    <div class="mt-2">
+      <a class="btn" href="/student/course/{{ course.id }}">العودة للمقرر</a>
+      <a class="btn btn-outline" href="/student/quiz/{{ quiz.id }}">محاولة جديدة</a>
+    </div>
+
+    {% if quiz.show_correct_answers %}
+      <h2 class="mt-4">مراجعة الإجابات</h2>
+      <div class="text-start" style="text-align:start;">
+        {% for qid, detail in attempt.answers.items() %}
+          <div class="card mb-2">
+            <strong>السؤال {{ loop.index }}</strong> —
+            {% if detail.correct %}<span class="badge approved">صحيح</span>{% else %}<span class="badge rejected">خطأ</span>{% endif %}
+            <p>إجابتك: {{ detail.given }}</p>
+            <p class="muted">الدرجة: {{ detail.earned }} / {{ detail.max }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

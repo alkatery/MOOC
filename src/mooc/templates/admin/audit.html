@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}سجل التدقيق{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/admin">← لوحة التحكم</a></nav>
+  <h1>سجل التدقيق (آخر 200 حدث)</h1>
+  <p class="muted">يتم الاحتفاظ بهذه السجلات لمدة {{ settings.retain_audit_log_days }} يوماً وفق متطلبات NELC.</p>
+  <table>
+    <thead><tr><th>الوقت</th><th>الفاعل</th><th>الإجراء</th><th>الكيان</th><th>IP</th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{ row.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+          <td>{{ row.actor_id or "—" }}</td>
+          <td><code>{{ row.action }}</code></td>
+          <td>{{ row.entity_type }} / {{ row.entity_id or "—" }}</td>
+          <td>{{ row.ip_address or "—" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

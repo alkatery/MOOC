@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}تقرير امتثال NELC{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/admin">← لوحة التحكم</a></nav>
+  <h1>تقرير امتثال المقررات لمعايير NELC</h1>
+  <p class="muted">تم حساب النسبة بناءً على سلم التقييم ثلاثي المستويات (ناشئ/متحقق/مثالي).</p>
+  <table>
+    <thead><tr><th>الرمز</th><th>العنوان</th><th>المعلم</th><th>درجة الامتثال</th><th>حالة المراجعة</th></tr></thead>
+    <tbody>
+      {% for row in summary %}
+        <tr>
+          <td><code>{{ row.course.code }}</code></td>
+          <td>{{ row.course.title_ar }}</td>
+          <td>{{ row.course.instructor.display_name }}</td>
+          <td>
+            <div class="progress" style="width:140px;"><div class="progress-bar" style="width:{{ row.score }}%"></div></div>
+            {{ row.score }}٪
+          </td>
+          <td>{{ row.state }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

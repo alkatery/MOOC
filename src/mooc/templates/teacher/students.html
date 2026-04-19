@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}طلاب {{ course.title_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/teacher/courses/{{ course.id }}">← العودة للمقرر</a></nav>
+  <h1>الطلاب المسجلون في {{ course.title_ar }}</h1>
+  {% if enrollments %}
+    <table>
+      <thead><tr><th>#</th><th>الاسم</th><th>تاريخ التسجيل</th><th>التقدم</th><th>الدرجة النهائية</th><th>الحالة</th></tr></thead>
+      <tbody>
+        {% for e in enrollments %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ e.user.display_name }}</td>
+            <td>{{ e.enrolled_at.strftime("%Y-%m-%d") }}</td>
+            <td>
+              <div class="progress" style="width:120px;"><div class="progress-bar" style="width:{{ e.progress_percent }}%"></div></div>
+              {{ e.progress_percent }}٪
+            </td>
+            <td>{{ e.final_grade or "—" }}</td>
+            <td>{{ e.status.value }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">لا يوجد طلاب مسجّلون بعد.</div>
+  {% endif %}
+</section>
+{% endblock %}

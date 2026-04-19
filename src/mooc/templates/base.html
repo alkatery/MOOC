@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="منصة مساقات إلكترونية مفتوحة متوافقة مع معايير المركز الوطني للتعليم الإلكتروني NELC">
+  <title>{% block title %}{{ settings.platform_name_ar }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎓%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <a href="#main" class="skip-link">تخطَّ إلى المحتوى الرئيسي</a>
+
+  <header class="site-header" role="banner">
+    <div class="container">
+      <a class="brand" href="/" aria-label="الصفحة الرئيسية">
+        <span aria-hidden="true">🎓</span>
+        <span>{{ settings.platform_name_ar }}</span>
+      </a>
+      <nav role="navigation" aria-label="القائمة الرئيسية">
+        <a href="/catalog">فهرس المقررات</a>
+        <a href="/nelc-standards">معايير NELC</a>
+        <a href="/verify-certificate">تحقق من شهادة</a>
+        <a href="/about">عن المنصة</a>
+      </nav>
+      <nav class="auth-links" aria-label="حساب المستخدم">
+        {% if user %}
+          {% if user.role.value == "admin" %}
+            <a href="/admin">لوحة الإدارة</a>
+          {% elif user.role.value == "instructor" %}
+            <a href="/teacher">لوحة المعلم</a>
+          {% elif user.role.value == "reviewer" %}
+            <a href="/admin/reviews">المراجعات</a>
+          {% else %}
+            <a href="/student">لوحة الطالب</a>
+          {% endif %}
+          <a href="/logout">تسجيل الخروج</a>
+        {% else %}
+          <a href="/login">تسجيل الدخول</a>
+          <a href="/register">إنشاء حساب</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" role="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <p>
+        <strong>{{ settings.platform_name_ar }}</strong> — منصة مساقات إلكترونية مفتوحة.
+        متوافقة مع معايير <a href="https://nelc.gov.sa" target="_blank" rel="noopener noreferrer">المركز الوطني للتعليم الإلكتروني (NELC)</a>.
+      </p>
+      <p class="muted">
+        <a href="/privacy">سياسة الخصوصية</a> ·
+        <a href="/nelc-standards">معايير الجودة</a> ·
+        إقامة البيانات: {{ settings.data_residency_region }}
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

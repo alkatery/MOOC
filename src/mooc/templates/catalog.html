@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}فهرس المقررات — {{ settings.platform_name_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <h1>فهرس المقررات</h1>
+  <form method="get" action="/catalog" class="flex flex-wrap mb-2" role="search" aria-label="بحث عن مقرر">
+    <label for="q" class="visually-hidden">ابحث</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="ابحث باسم المقرر..." style="flex:1;min-width:240px;padding:0.65rem;border:1px solid var(--border);border-radius:6px;">
+    <select name="category" aria-label="التصنيف" style="padding:0.65rem;border:1px solid var(--border);border-radius:6px;">
+      <option value="">جميع التصنيفات</option>
+      {% for cat in categories %}
+        <option value="{{ cat.id }}" {% if selected and selected == cat.id %}selected{% endif %}>{{ cat.name_ar }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn" type="submit">بحث</button>
+  </form>
+
+  {% if courses %}
+    <div class="grid grid-3">
+      {% for course in courses %}
+        <article class="course-card">
+          <div class="cover">{{ course.code }}</div>
+          <div class="body">
+            <h3><a href="/courses/{{ course.id }}">{{ course.title_ar }}</a></h3>
+            <p>{{ course.short_description_ar }}</p>
+            <div class="meta">
+              <span>{{ course.duration_hours }} س</span>
+              <span>{{ course.level.value }}</span>
+              <span>{% if course.is_free %}مجاني{% else %}{{ course.price }} ر.س{% endif %}</span>
+            </div>
+            <a class="btn mt-2" href="/courses/{{ course.id }}">عرض التفاصيل</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">لا توجد مقررات مطابقة للبحث.</div>
+  {% endif %}
+</section>
+{% endblock %}

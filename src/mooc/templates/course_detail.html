@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title_ar }} — {{ settings.platform_name_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav aria-label="مسار التنقل"><a href="/catalog">← العودة إلى الفهرس</a></nav>
+  <article class="card mt-2">
+    <span class="badge {{ course.status.value }}">{{ course.status.value }}</span>
+    <h1>{{ course.title_ar }}</h1>
+    <p class="muted">{{ course.short_description_ar }}</p>
+    <div class="flex flex-wrap muted mt-2">
+      <span>📘 رمز المقرر: <strong>{{ course.code }}</strong></span>
+      <span>⏱ {{ course.duration_hours }} ساعة</span>
+      <span>📊 المستوى: {{ course.level.value }}</span>
+      <span>🌐 اللغة: {{ course.language }}</span>
+      <span>💰 {% if course.is_free %}مجاني{% else %}{{ course.price }} ر.س{% endif %}</span>
+    </div>
+
+    <h2 class="mt-4">وصف المقرر</h2>
+    <p>{{ course.description_ar }}</p>
+
+    {% if course.learning_outcomes %}
+      <h2>مخرجات التعلم</h2>
+      <ul>
+        {% for outcome in course.learning_outcomes %}<li>{{ outcome }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if course.target_audience %}
+      <h2>الفئة المستهدفة</h2>
+      <p>{{ course.target_audience }}</p>
+    {% endif %}
+
+    {% if course.prerequisites %}
+      <h2>المتطلبات السابقة</h2>
+      <p>{{ course.prerequisites }}</p>
+    {% endif %}
+
+    {% if course.accessibility_features %}
+      <h2>مزايا إمكانية الوصول</h2>
+      <ul>
+        {% for feature in course.accessibility_features %}<li>{{ feature }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+
+    <h2 class="mt-4">محتويات المقرر</h2>
+    {% for module in course.modules %}
+      <div class="card mb-2">
+        <h3>{{ module.order_index }}. {{ module.title_ar }}</h3>
+        {% if module.description_ar %}<p class="muted">{{ module.description_ar }}</p>{% endif %}
+        <ul>
+          {% for lesson in module.lessons %}
+            <li>
+              {{ lesson.title_ar }}
+              <span class="badge">{{ lesson.lesson_type.value }}</span>
+              <span class="muted">{{ lesson.duration_minutes }} د</span>
+              {% if lesson.is_free_preview %}<span class="badge approved">معاينة مجانية</span>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+
+    <div class="mt-4">
+      {% if user %}
+        <a class="btn" href="/student/enroll/{{ course.id }}">سجّل الآن</a>
+      {% else %}
+        <a class="btn" href="/login">سجّل الدخول للتسجيل</a>
+      {% endif %}
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ quiz.title_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <article class="card">
+    <h1>{{ quiz.title_ar }}</h1>
+    {% if quiz.instructions_ar %}<p>{{ quiz.instructions_ar }}</p>{% endif %}
+    <div class="muted flex flex-wrap mt-1">
+      <span>⏱ الحد الزمني: {{ quiz.time_limit_minutes }} د</span>
+      <span>🎯 درجة النجاح: {{ quiz.passing_score }}٪</span>
+      <span>🔁 الحد الأقصى للمحاولات: {{ quiz.max_attempts }}</span>
+      <span>📚 عدد الأسئلة: {{ quiz.questions|length }}</span>
+    </div>
+
+    <form method="post" action="/student/quiz/{{ quiz.id }}/submit" class="stacked mt-3">
+      {% for question in quiz.questions %}
+        <fieldset class="card">
+          <legend><strong>س{{ loop.index }}. {{ question.text_ar }}</strong> ({{ question.points }} درجة)</legend>
+
+          {% if question.question_type.value in ["multiple_choice", "true_false"] %}
+            {% for choice in question.choices %}
+              <label style="display:block;padding:0.25rem 0;">
+                <input type="radio" name="q_{{ question.id }}" value="{{ choice }}" required>
+                {{ choice }}
+              </label>
+            {% endfor %}
+          {% elif question.question_type.value == "multiple_answer" %}
+            {% for choice in question.choices %}
+              <label style="display:block;padding:0.25rem 0;">
+                <input type="checkbox" name="q_{{ question.id }}" value="{{ choice }}">
+                {{ choice }}
+              </label>
+            {% endfor %}
+          {% elif question.question_type.value == "short_answer" %}
+            <input type="text" name="q_{{ question.id }}" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:6px;" required>
+          {% elif question.question_type.value == "essay" %}
+            <textarea name="q_{{ question.id }}" rows="5" style="width:100%;padding:0.5rem;border:1px solid var(--border);border-radius:6px;" required></textarea>
+            <p class="form-help">سيتم تقييم هذه الإجابة يدوياً من قبل المعلم.</p>
+          {% endif %}
+        </fieldset>
+      {% endfor %}
+
+      <button class="btn" type="submit">تسليم الإجابات</button>
+    </form>
+
+    {% if attempts %}
+      <h2 class="mt-4">محاولاتك السابقة</h2>
+      <table>
+        <thead><tr><th>#</th><th>الدرجة</th><th>الحالة</th><th>تم التسليم</th></tr></thead>
+        <tbody>
+          {% for a in attempts %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ a.score }} / {{ a.max_score }}</td>
+              <td>{% if a.passed %}<span class="badge approved">ناجح</span>{% else %}<span class="badge rejected">غير ناجح</span>{% endif %}</td>
+              <td>{{ a.submitted_at.strftime("%Y-%m-%d %H:%M") if a.submitted_at else "—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

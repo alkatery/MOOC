@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}تسجيل الدخول — {{ settings.platform_name_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4" style="max-width: 540px;">
+  <div class="card">
+    <h1>تسجيل الدخول</h1>
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+    <form method="post" action="/login" class="stacked">
+      <div class="form-field">
+        <label for="email">البريد الإلكتروني</label>
+        <input type="email" name="email" id="email" required autocomplete="email">
+      </div>
+      <div class="form-field">
+        <label for="password">كلمة المرور</label>
+        <input type="password" name="password" id="password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn">دخول</button>
+    </form>
+    <p class="mt-2">ليس لديك حساب؟ <a href="/register">أنشئ حساباً جديداً</a></p>
+  </div>
+</section>
+{% endblock %}

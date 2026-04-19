@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}إدارة المقررات{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/admin">← لوحة التحكم</a></nav>
+  <h1>جميع المقررات ({{ courses|length }})</h1>
+  <table>
+    <thead><tr><th>الرمز</th><th>العنوان</th><th>المعلم</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+    <tbody>
+      {% for c in courses %}
+        <tr>
+          <td><code>{{ c.code }}</code></td>
+          <td>{{ c.title_ar }}</td>
+          <td>{{ c.instructor.display_name }}</td>
+          <td><span class="badge {{ c.status.value }}">{{ c.status.value }}</span></td>
+          <td class="flex flex-wrap" style="gap:0.25rem">
+            <a class="btn btn-sm" href="/admin/reviews/{{ c.id }}">مراجعة NELC</a>
+            {% if c.status.value == "approved" %}
+              <form method="post" action="/admin/courses/{{ c.id }}/publish" style="display:inline">
+                <button class="btn btn-sm btn-accent">نشر</button>
+              </form>
+            {% endif %}
+            <form method="post" action="/admin/courses/{{ c.id }}/archive" style="display:inline">
+              <button class="btn btn-sm btn-danger">أرشفة</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

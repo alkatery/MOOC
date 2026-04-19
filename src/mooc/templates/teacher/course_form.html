@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}مقرر جديد{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/teacher">← العودة للوحة المعلم</a></nav>
+  <h1>إنشاء مقرر جديد</h1>
+  <form method="post" action="/teacher/courses/new" class="stacked">
+    <div class="form-field">
+      <label for="code">رمز المقرر</label>
+      <input type="text" name="code" id="code" required placeholder="CS101">
+    </div>
+    <div class="form-field">
+      <label for="title_ar">عنوان المقرر</label>
+      <input type="text" name="title_ar" id="title_ar" required>
+    </div>
+    <div class="form-field">
+      <label for="short_description_ar">وصف مختصر</label>
+      <input type="text" name="short_description_ar" id="short_description_ar" required maxlength="500">
+    </div>
+    <div class="form-field">
+      <label for="description_ar">الوصف التفصيلي</label>
+      <textarea name="description_ar" id="description_ar" required></textarea>
+    </div>
+    <div class="form-field">
+      <label for="level">المستوى</label>
+      <select name="level" id="level">
+        <option value="beginner">مبتدئ</option>
+        <option value="intermediate">متوسط</option>
+        <option value="advanced">متقدم</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label for="duration_hours">عدد الساعات</label>
+      <input type="number" name="duration_hours" id="duration_hours" step="0.5" min="0" value="0">
+    </div>
+    <div class="form-field">
+      <label for="passing_grade">درجة النجاح (%)</label>
+      <input type="number" name="passing_grade" id="passing_grade" min="0" max="100" value="60">
+    </div>
+    <div class="form-field">
+      <label for="learning_outcomes">مخرجات التعلم (مخرج في كل سطر)</label>
+      <textarea name="learning_outcomes" id="learning_outcomes" placeholder="فهم أساسيات البرمجة&#10;تطبيق الخوارزميات"></textarea>
+    </div>
+    <button class="btn" type="submit">إنشاء المقرر</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}بناء اختبار — {{ lesson.title_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/teacher/courses/{{ lesson.module.course_id }}">← العودة للمقرر</a></nav>
+  <h1>بناء اختبار الدرس: {{ lesson.title_ar }}</h1>
+
+  {% if not quiz %}
+    <form method="post" action="/teacher/lessons/{{ lesson.id }}/quiz" class="stacked card">
+      <h2>إنشاء الاختبار</h2>
+      <div class="form-field"><label>عنوان الاختبار</label><input type="text" name="title_ar" required></div>
+      <div class="form-field"><label>التعليمات</label><textarea name="instructions_ar"></textarea></div>
+      <div class="form-field"><label>الحد الزمني (دقائق، 0 = بلا حد)</label><input type="number" name="time_limit_minutes" min="0" value="0"></div>
+      <div class="form-field"><label>درجة النجاح (%)</label><input type="number" name="passing_score" min="0" max="100" value="60"></div>
+      <div class="form-field"><label>الحد الأقصى للمحاولات</label><input type="number" name="max_attempts" min="1" value="3"></div>
+      <button class="btn" type="submit">إنشاء</button>
+    </form>
+  {% else %}
+    <article class="card">
+      <h2>{{ quiz.title_ar }}</h2>
+      <p class="muted">{{ quiz.instructions_ar or "" }}</p>
+      <div class="flex flex-wrap muted">
+        <span>الحد الزمني: {{ quiz.time_limit_minutes }} د</span>
+        <span>درجة النجاح: {{ quiz.passing_score }}٪</span>
+        <span>محاولات: {{ quiz.max_attempts }}</span>
+      </div>
+    </article>
+
+    <h3 class="mt-3">الأسئلة ({{ quiz.questions|length }})</h3>
+    {% for q in quiz.questions %}
+      <div class="card mb-2">
+        <strong>{{ loop.index }}. [{{ q.question_type.value }}] {{ q.text_ar }}</strong>
+        <p class="muted">الدرجة: {{ q.points }}</p>
+        {% if q.choices %}
+          <ul>{% for c in q.choices %}<li>{{ c }}{% if c in q.correct_answer %} ✓{% endif %}</li>{% endfor %}</ul>
+        {% else %}
+          <p>الإجابة الصحيحة: {{ q.correct_answer|join(", ") }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <h3 class="mt-3">إضافة سؤال جديد</h3>
+    <form method="post" action="/teacher/quizzes/{{ quiz.id }}/questions" class="stacked card">
+      <div class="form-field">
+        <label>نوع السؤال</label>
+        <select name="question_type">
+          {% for t in question_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+        <span class="form-help">
+          multiple_choice (اختيار من متعدد) · multiple_answer (متعدد الإجابات) · true_false (صح/خطأ) ·
+          short_answer (إجابة قصيرة) · essay (مقال)
+        </span>
+      </div>
+      <div class="form-field"><label>نص السؤال</label><textarea name="text_ar" required></textarea></div>
+      <div class="form-field">
+        <label>الخيارات (خيار في كل سطر)</label>
+        <textarea name="choices" placeholder="الخيار 1&#10;الخيار 2"></textarea>
+      </div>
+      <div class="form-field">
+        <label>الإجابة الصحيحة (إجابة في كل سطر)</label>
+        <textarea name="correct_answer"></textarea>
+      </div>
+      <div class="form-field"><label>الدرجة</label><input type="number" name="points" step="0.5" value="1"></div>
+      <div class="form-field"><label>الشرح (اختياري)</label><textarea name="explanation_ar"></textarea></div>
+      <button class="btn btn-sm" type="submit">إضافة السؤال</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}
