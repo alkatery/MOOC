@@ -12,7 +12,14 @@ from sqlalchemy.orm import Session
 from ..config import get_settings
 from ..database import get_db
 from ..models import Category, Course, CourseStatus
-from ..nelc import DOMAINS, total_criteria_count
+from ..nelc import (
+    DOMAINS,
+    excellence_requirements,
+    mandatory_requirements,
+    optional_requirements,
+    requirements_summary,
+    total_criteria_count,
+)
 from ..security import get_current_user_optional
 
 router = APIRouter(tags=["pages"])
@@ -105,6 +112,24 @@ def privacy(request: Request, user=Depends(get_current_user_optional)):
 @router.get("/nelc-standards", response_class=HTMLResponse)
 def nelc_standards(request: Request, user=Depends(get_current_user_optional)):
     return templates.TemplateResponse(request, "nelc_standards.html", _context(request, user)
+    )
+
+
+@router.get("/nelc/course-requirements", response_class=HTMLResponse)
+def nelc_course_requirements(
+    request: Request, user=Depends(get_current_user_optional)
+):
+    return templates.TemplateResponse(
+        request,
+        "nelc_course_requirements.html",
+        _context(
+            request,
+            user,
+            mandatory=mandatory_requirements(),
+            optional=optional_requirements(),
+            excellence=excellence_requirements(),
+            req_summary=requirements_summary(),
+        ),
     )
 
 

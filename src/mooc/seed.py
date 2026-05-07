@@ -124,11 +124,18 @@ def run_seed() -> None:
                 target_audience="المبتدئون في علوم الحاسب.",
                 prerequisites="لا يتطلب خبرة سابقة.",
                 accessibility_features=["نصوص مكتوبة", "ترجمة إشارية", "تباين عالٍ"],
+                cover_image="/static/img/cs101-cover.jpg",
                 category_id=categories["cs"].id,
                 instructor_id=instructor.id,
                 status=CourseStatus.PUBLISHED,
                 published_at=datetime.utcnow(),
-                nelc_metadata={"track": "general-education"},
+                nelc_metadata={
+                    "track": "general-education",
+                    "integrity_policy": True,
+                    "ip_compliance": "CC BY 4.0",
+                    "national_compliance": True,
+                    "syllabus_url": "/static/cs101-syllabus.pdf",
+                },
             )
             db.add(course)
             db.flush()

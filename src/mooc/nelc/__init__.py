@@ -15,6 +15,18 @@ The platform implements three complementary NELC-aligned layers:
    course before it can be published.
 """
 
+from .course_requirements import (
+    COURSE_REQUIREMENTS,
+    CourseRequirement,
+    RequirementLevel,
+    all_requirements,
+    excellence_requirements,
+    mandatory_requirements,
+    optional_requirements,
+    requirement_by_code,
+    requirements_by_level,
+    requirements_summary,
+)
 from .standards import (
     DOMAINS,
     RUBRIC_LEVELS,
@@ -27,11 +39,21 @@ from .standards import (
 )
 
 __all__ = [
+    "COURSE_REQUIREMENTS",
+    "CourseRequirement",
     "DOMAINS",
     "RUBRIC_LEVELS",
+    "RequirementLevel",
     "all_criteria",
+    "all_requirements",
     "criterion_by_code",
     "domain_by_code",
+    "excellence_requirements",
+    "mandatory_requirements",
+    "optional_requirements",
+    "requirement_by_code",
+    "requirements_by_level",
+    "requirements_summary",
     "subdomain_by_code",
     "taxonomy_summary",
     "total_criteria_count",

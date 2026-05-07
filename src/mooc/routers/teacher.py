@@ -32,6 +32,7 @@ from ..models import (
 )
 from ..security import require_roles
 from ..services.audit import log as audit_log
+from ..services.course_requirements import compliance_report
 
 router = APIRouter(prefix="/teacher", tags=["teacher-portal"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
@@ -171,10 +172,32 @@ def submit_for_review(
     user: User = Depends(require_teacher),
 ):
     course = _own_course(db, course_id, user)
+    report = compliance_report(course)
+    if not report["can_publish"]:
+        raise HTTPException(
+            status_code=400,
+            detail="لا يمكن إرسال المقرر للمراجعة قبل تحقيق جميع المتطلبات الإلزامية. راجع تقرير الامتثال.",
+        )
     course.status = CourseStatus.UNDER_REVIEW
     audit_log(db, user, "course.submit_review", "course", course.public_id)
     db.commit()
     return RedirectResponse(f"/teacher/courses/{course_id}", status_code=303)
+
+
+@router.get("/courses/{course_id}/requirements", response_class=HTMLResponse)
+def course_requirements_view(
+    course_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_teacher),
+):
+    course = _own_course(db, course_id, user)
+    report = compliance_report(course)
+    return templates.TemplateResponse(
+        request,
+        "teacher/course_requirements.html",
+        _ctx(request, user, course=course, report=report),
+    )
 
 
 # ---------------------------------------------------------------------------

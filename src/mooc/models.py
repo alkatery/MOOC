@@ -232,6 +232,9 @@ class Course(Base):
     discussions: Mapped[List["DiscussionThread"]] = relationship(
         "DiscussionThread", back_populates="course", cascade="all, delete-orphan"
     )
+    assignments: Mapped[List["Assignment"]] = relationship(
+        "Assignment", back_populates="course", cascade="all, delete-orphan"
+    )
 
 
 class Module(Base):
@@ -414,6 +417,7 @@ class Assignment(Base):
     max_score: Mapped[float] = mapped_column(Float, default=100.0, nullable=False)
     rubric: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
+    course: Mapped["Course"] = relationship("Course", back_populates="assignments")
     submissions: Mapped[List["AssignmentSubmission"]] = relationship(
         "AssignmentSubmission", back_populates="assignment", cascade="all, delete-orphan"
     )
