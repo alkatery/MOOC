@@ -1,0 +1,19 @@
+# Pinned runtime dependencies for Hostinger / cPanel Python App.
+#
+# Hostinger's Setup Python App automatically runs
+#   pip install -r requirements.txt
+# when this file changes. Keep ranges loose enough to track security
+# fixes but tight enough to avoid surprises.
+
+fastapi>=0.115,<0.130
+uvicorn[standard]>=0.30,<0.40
+sqlalchemy>=2.0,<3.0
+pydantic[email]>=2.7,<3.0
+python-multipart>=0.0.9
+jinja2>=3.1,<4.0
+python-dotenv>=1.0.0
+
+# Production extras
+gunicorn>=22.0
+psycopg[binary]>=3.2
+a2wsgi>=1.10

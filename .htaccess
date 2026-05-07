@@ -1,0 +1,29 @@
+# Apache rules for Hostinger / cPanel.
+# Hostinger's Setup Python App injects its own Passenger directives; this
+# file just hardens defaults and protects sensitive paths.
+
+# Block direct access to the Python source, deploy kit and dotfiles.
+<FilesMatch "(^\.|.*\.(py|pyc|toml|md|service|socket|conf|sh)$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Long-cache for static assets — they live under /static/.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/svg+xml "access plus 30 days"
+</IfModule>
+
+# Compress text responses where possible.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/json application/javascript text/plain
+</IfModule>
