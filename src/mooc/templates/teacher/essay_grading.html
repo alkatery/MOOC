@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}تصحيح مقال — {{ attempt.quiz.title_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/teacher/essays">← قائمة المقالات</a></nav>
+  <h1>تصحيح المقالات</h1>
+  <p class="muted">
+    الطالب: <strong>{{ student.display_name if student else "—" }}</strong>
+    · الاختبار: <strong>{{ attempt.quiz.title_ar }}</strong>
+    · المقرر: <strong>{{ course.title_ar }}</strong>
+  </p>
+  <p class="muted">الدرجة الحالية: {{ attempt.score }} / {{ attempt.max_score }}</p>
+
+  <form method="post" action="/teacher/attempts/{{ attempt.id }}/grade-essays" class="stacked">
+    {% for q in essay_questions %}
+      {% set entry = (attempt.answers or {}).get(q.id|string, {}) %}
+      <fieldset class="card">
+        <legend><strong>{{ q.text_ar }}</strong> ({{ q.points }} درجة)</legend>
+        <p class="muted">إجابة الطالب:</p>
+        <pre style="white-space:pre-wrap">{{ entry.given or "—" }}</pre>
+        <div class="form-field">
+          <label for="score_{{ q.id }}">الدرجة (من {{ q.points }})</label>
+          <input
+            type="number" step="0.5" min="0" max="{{ q.points }}"
+            name="score_{{ q.id }}" id="score_{{ q.id }}"
+            value="{{ entry.earned if entry.manual else 0 }}" required>
+        </div>
+      </fieldset>
+    {% endfor %}
+    <button class="btn" type="submit">حفظ الدرجات</button>
+  </form>
+</section>
+{% endblock %}

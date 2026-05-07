@@ -53,6 +53,14 @@ dev = [
     "httpx>=0.27",
     "ruff>=0.6",
 ]
+deploy = [
+    # Production WSGI/ASGI process manager (VPS via systemd + gunicorn)
+    "gunicorn>=22.0",
+    # PostgreSQL driver
+    "psycopg[binary]>=3.2",
+    # ASGI->WSGI bridge for shared hosting (Hostinger / cPanel Passenger)
+    "a2wsgi>=1.10",
+]
 
 [project.scripts]
 mooc-platform = "mooc.__main__:main"

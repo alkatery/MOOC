@@ -70,5 +70,17 @@
       <button class="btn" type="submit">إنهاء الدرس ✓</button>
     </form>
   </article>
+
+  <article class="card mt-3">
+    <h2>🤖 اسأل المساعد الذكي عن هذا الدرس</h2>
+    <p class="muted">يُجيب المساعد بناءً على محتوى الدرس فقط. لا يستبدل المعلم.</p>
+    <form method="post" action="/student/ai/lesson/{{ lesson.id }}/ask" class="stacked">
+      <div class="form-field">
+        <label for="question">سؤالك</label>
+        <textarea name="question" id="question" rows="3" required placeholder="مثال: اشرح لي مفهوم الخوارزمية بمثال بسيط"></textarea>
+      </div>
+      <button class="btn btn-sm" type="submit">أرسل</button>
+    </form>
+  </article>
 </section>
 {% endblock %}

@@ -12,6 +12,7 @@
     <div class="flex flex-wrap">
       <a class="btn btn-sm btn-outline" href="/courses/{{ course.id }}">عرض كمستخدم</a>
       <a class="btn btn-sm btn-outline" href="/teacher/courses/{{ course.id }}/students">الطلاب المسجلون</a>
+      <a class="btn btn-sm btn-outline" href="/teacher/courses/{{ course.id }}/requirements">امتثال متطلبات NELC</a>
       {% if course.status.value == "draft" %}
         <form method="post" action="/teacher/courses/{{ course.id }}/submit-for-review" style="display:inline">
           <button class="btn btn-sm btn-accent">إرسال للمراجعة (NELC)</button>

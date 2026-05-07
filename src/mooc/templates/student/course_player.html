@@ -26,6 +26,20 @@
       <div class="progress" aria-label="نسبة الإنجاز"><div class="progress-bar" style="width: {{ enrollment.progress_percent }}%"></div></div>
       <p class="mt-1"><strong>{{ enrollment.progress_percent }}٪</strong> مكتمل</p>
 
+      {% if course.assignments %}
+        <h2 class="mt-3">الواجبات</h2>
+        <ul>
+          {% for a in course.assignments %}
+            <li>
+              <a href="/student/course/{{ course.id }}/assignment/{{ a.id }}">
+                <strong>{{ a.title_ar }}</strong>
+              </a>
+              <span class="muted">— الدرجة القصوى {{ a.max_score }}{% if a.due_at %} · يستحق في {{ a.due_at.strftime("%Y-%m-%d") }}{% endif %}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
       <h2 class="mt-3">منتدى النقاش</h2>
       <details>
         <summary>إنشاء موضوع جديد</summary>

@@ -301,6 +301,24 @@ async def submit_review(
 # ---------------------------------------------------------------------------
 
 
+@router.get("/insights", response_class=HTMLResponse)
+def insights_view(
+    request: Request,
+    summarize: int = 0,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_admin),
+):
+    from ..services.admin_insights import compute_insights, generate_admin_summary_ar
+
+    insights = compute_insights(db)
+    summary = generate_admin_summary_ar(insights) if summarize else None
+    return templates.TemplateResponse(
+        request,
+        "admin/insights.html",
+        _ctx(request, user, insights=insights, summary=summary),
+    )
+
+
 @router.get("/audit", response_class=HTMLResponse)
 def audit_view(
     request: Request,

@@ -1,0 +1,106 @@
+name: Deploy to Hostinger (larning.alkathiri.net)
+
+# Triggers:
+#   * push to main           → automatic deployment
+#   * manual run from Actions → "Run workflow"
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: true
+
+env:
+  REMOTE_DIR: /home/u423175456/domains/alkathiri.net/public_html/larning
+  PY_VERSION: "3.11"
+
+jobs:
+  test:
+    name: Run test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PY_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  deploy:
+    name: Sync to Hostinger over SSH and restart Passenger
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Touch a fresh restart marker (Passenger watches this file)
+      - name: Mark restart trigger
+        run: |
+          mkdir -p tmp
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > tmp/restart.txt
+
+      - name: Configure SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            chmod 644 ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
+
+      - name: Rsync repo to server
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/id_ed25519" \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='__pycache__/' \
+            --exclude='*.pyc' \
+            --exclude='.venv/' \
+            --exclude='.pytest_cache/' \
+            --exclude='.ruff_cache/' \
+            --exclude='var/' \
+            --exclude='tests/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --include='.env.example' \
+            ./ \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ env.REMOTE_DIR }}/"
+
+      - name: Install dependencies and restart Passenger
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/id_ed25519 \
+              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              "bash -lc 'set -e
+                cd ${{ env.REMOTE_DIR }}
+                # Activate the Hostinger-managed virtualenv. The path is
+                # injected at \"Setup Python App\" time; if your account
+                # uses a different one, override via the VENV_ACTIVATE secret.
+                VENV_PATH=\"${{ secrets.VENV_ACTIVATE }}\"
+                if [ -z \"\$VENV_PATH\" ]; then
+                  VENV_PATH=\$(ls -d /home/${{ secrets.SSH_USER }}/virtualenv/domains/alkathiri.net/public_html/larning/*/bin/activate 2>/dev/null | head -1)
+                fi
+                if [ -n \"\$VENV_PATH\" ] && [ -f \"\$VENV_PATH\" ]; then
+                  source \"\$VENV_PATH\"
+                  pip install --upgrade pip
+                  pip install -r requirements.txt
+                else
+                  echo \"⚠ Virtualenv not found — finish the hPanel Setup Python App once, then re-run this workflow.\"
+                fi
+                mkdir -p tmp
+                touch tmp/restart.txt
+                echo \"✓ Deployed and Passenger restarted.\"'"
+
+      - name: Show success notice
+        run: |
+          echo "::notice::تم النشر بنجاح. افتح https://larning.alkathiri.net"

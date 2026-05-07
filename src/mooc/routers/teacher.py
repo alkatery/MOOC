@@ -27,11 +27,14 @@ from ..models import (
     Question,
     QuestionType,
     Quiz,
+    QuizAttempt,
     User,
     UserRole,
 )
 from ..security import require_roles
 from ..services.audit import log as audit_log
+from ..services.course_requirements import compliance_report
+from ..services.grading import regrade_attempt_with_manual
 
 router = APIRouter(prefix="/teacher", tags=["teacher-portal"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
@@ -171,10 +174,32 @@ def submit_for_review(
     user: User = Depends(require_teacher),
 ):
     course = _own_course(db, course_id, user)
+    report = compliance_report(course)
+    if not report["can_publish"]:
+        raise HTTPException(
+            status_code=400,
+            detail="لا يمكن إرسال المقرر للمراجعة قبل تحقيق جميع المتطلبات الإلزامية. راجع تقرير الامتثال.",
+        )
     course.status = CourseStatus.UNDER_REVIEW
     audit_log(db, user, "course.submit_review", "course", course.public_id)
     db.commit()
     return RedirectResponse(f"/teacher/courses/{course_id}", status_code=303)
+
+
+@router.get("/courses/{course_id}/requirements", response_class=HTMLResponse)
+def course_requirements_view(
+    course_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_teacher),
+):
+    course = _own_course(db, course_id, user)
+    report = compliance_report(course)
+    return templates.TemplateResponse(
+        request,
+        "teacher/course_requirements.html",
+        _ctx(request, user, course=course, report=report),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -427,6 +452,101 @@ def grade_submission(
 # ---------------------------------------------------------------------------
 # Class roster
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Essay grading (manual)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/essays", response_class=HTMLResponse)
+def essays_pending(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_teacher),
+):
+    course_ids = [c.id for c in db.query(Course).filter(Course.instructor_id == user.id).all()]
+    attempts = (
+        db.query(QuizAttempt)
+        .join(Quiz, QuizAttempt.quiz_id == Quiz.id)
+        .join(Lesson, Quiz.lesson_id == Lesson.id)
+        .join(Module, Lesson.module_id == Module.id)
+        .filter(Module.course_id.in_(course_ids))
+        .filter(QuizAttempt.submitted_at.isnot(None))
+        .order_by(QuizAttempt.submitted_at.desc())
+        .all()
+    )
+    pending = []
+    for a in attempts:
+        essay_qs = [q for q in a.quiz.questions if q.question_type == QuestionType.ESSAY]
+        if not essay_qs:
+            continue
+        ungraded = [
+            q for q in essay_qs
+            if not (a.answers or {}).get(str(q.id), {}).get("manual")
+        ]
+        if ungraded:
+            pending.append({"attempt": a, "questions": essay_qs, "ungraded_count": len(ungraded)})
+    return templates.TemplateResponse(
+        request,
+        "teacher/essays.html",
+        _ctx(request, user, pending=pending),
+    )
+
+
+@router.get("/attempts/{attempt_id}/grade-essays", response_class=HTMLResponse)
+def grade_essays_form(
+    attempt_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_teacher),
+):
+    attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=404, detail="المحاولة غير موجودة")
+    course = attempt.quiz.lesson.module.course
+    _own_course(db, course.id, user)
+    student = db.query(User).filter(User.id == attempt.user_id).first()
+    essay_qs = [q for q in attempt.quiz.questions if q.question_type == QuestionType.ESSAY]
+    return templates.TemplateResponse(
+        request,
+        "teacher/essay_grading.html",
+        _ctx(
+            request,
+            user,
+            attempt=attempt,
+            course=course,
+            student=student,
+            essay_questions=essay_qs,
+        ),
+    )
+
+
+@router.post("/attempts/{attempt_id}/grade-essays")
+async def grade_essays_submit(
+    attempt_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_teacher),
+):
+    attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id).first()
+    if not attempt:
+        raise HTTPException(status_code=404, detail="المحاولة غير موجودة")
+    course = attempt.quiz.lesson.module.course
+    _own_course(db, course.id, user)
+    form = await request.form()
+    manual_scores = {}
+    for key, value in form.multi_items():
+        if key.startswith("score_"):
+            qid = key[len("score_"):]
+            try:
+                manual_scores[qid] = float(value)
+            except ValueError:
+                continue
+    regrade_attempt_with_manual(db, attempt, manual_scores)
+    audit_log(db, user, "essay.grade", "quiz_attempt", attempt.id)
+    db.commit()
+    return RedirectResponse("/teacher/essays", status_code=303)
 
 
 @router.get("/courses/{course_id}/students", response_class=HTMLResponse)

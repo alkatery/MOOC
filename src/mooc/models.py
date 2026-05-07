@@ -103,6 +103,155 @@ class ReviewState(str, enum.Enum):
     NEEDS_REVISION = "needs_revision"
 
 
+class SubscriptionPlanCode(str, enum.Enum):
+    FREE = "free"
+    STANDARD = "standard"
+    PREMIUM = "premium"
+
+
+class BillingPeriod(str, enum.Enum):
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
+
+
+class SubscriptionStatus(str, enum.Enum):
+    TRIAL = "trial"
+    ACTIVE = "active"
+    PAST_DUE = "past_due"
+    CANCELLED = "cancelled"
+    EXPIRED = "expired"
+
+
+# ---------------------------------------------------------------------------
+# Tenant (SaaS workspace)
+# ---------------------------------------------------------------------------
+
+
+class Tenant(Base):
+    """A SaaS workspace — each subscriber gets their own."""
+
+    __tablename__ = "tenants"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    public_id: Mapped[str] = mapped_column(String(32), unique=True, default=_uuid, index=True)
+    slug: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    name_ar: Mapped[str] = mapped_column(String(160), nullable=False)
+    name_en: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
+    tagline_ar: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    about_ar: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    contact_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    contact_phone: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    logo_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    favicon_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    primary_color: Mapped[str] = mapped_column(String(16), default="#0a7d3a", nullable=False)
+    accent_color: Mapped[str] = mapped_column(String(16), default="#1f5fbf", nullable=False)
+    background_color: Mapped[str] = mapped_column(String(16), default="#ffffff", nullable=False)
+    text_color: Mapped[str] = mapped_column(String(16), default="#1a1a1a", nullable=False)
+    custom_labels: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    social_links: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    policies: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    custom_domain: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+
+    subscription: Mapped[Optional["Subscription"]] = relationship(
+        "Subscription", back_populates="tenant", uselist=False, cascade="all, delete-orphan"
+    )
+    pages: Mapped[List["TenantPage"]] = relationship(
+        "TenantPage", back_populates="tenant", cascade="all, delete-orphan"
+    )
+
+    @property
+    def display_name(self) -> str:
+        return self.name_ar or self.name_en or self.slug
+
+
+class SubscriptionPlan(Base):
+    """Pricing plan — Free / Standard / Premium."""
+
+    __tablename__ = "subscription_plans"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[SubscriptionPlanCode] = mapped_column(
+        Enum(SubscriptionPlanCode, native_enum=False, length=16),
+        unique=True,
+        nullable=False,
+    )
+    name_ar: Mapped[str] = mapped_column(String(80), nullable=False)
+    name_en: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    description_ar: Mapped[str] = mapped_column(Text, nullable=False)
+    price_monthly_sar: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    price_yearly_sar: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    max_courses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_students: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_admins: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    features: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class Subscription(Base):
+    """A tenant's active subscription (one row per tenant)."""
+
+    __tablename__ = "subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id"), unique=True, nullable=False
+    )
+    plan_id: Mapped[int] = mapped_column(ForeignKey("subscription_plans.id"), nullable=False)
+    period: Mapped[BillingPeriod] = mapped_column(
+        Enum(BillingPeriod, native_enum=False, length=16),
+        default=BillingPeriod.MONTHLY,
+        nullable=False,
+    )
+    status: Mapped[SubscriptionStatus] = mapped_column(
+        Enum(SubscriptionStatus, native_enum=False, length=16),
+        default=SubscriptionStatus.TRIAL,
+        nullable=False,
+    )
+    starts_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+    trial_ends_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    current_period_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_payment_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_payment_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="subscription")
+    plan: Mapped["SubscriptionPlan"] = relationship("SubscriptionPlan")
+
+    @property
+    def is_usable(self) -> bool:
+        return self.status in {SubscriptionStatus.TRIAL, SubscriptionStatus.ACTIVE}
+
+
+class TenantPage(Base):
+    """Custom CMS page authored by a tenant (about, FAQ, etc.)."""
+
+    __tablename__ = "tenant_pages"
+    __table_args__ = (UniqueConstraint("tenant_id", "slug", name="uq_tenant_page_slug"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"), nullable=False)
+    slug: Mapped[str] = mapped_column(String(80), nullable=False)
+    title_ar: Mapped[str] = mapped_column(String(200), nullable=False)
+    body_html: Mapped[str] = mapped_column(Text, nullable=False)
+    is_published: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    show_in_nav: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    order_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="pages")
+
+
 # ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
@@ -115,6 +264,9 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     public_id: Mapped[str] = mapped_column(String(32), unique=True, default=_uuid, index=True)
+    tenant_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("tenants.id"), nullable=True, index=True
+    )
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     national_id: Mapped[Optional[str]] = mapped_column(String(20), unique=True, nullable=True)
     full_name_ar: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -160,6 +312,9 @@ class Category(Base):
     __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tenant_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("tenants.id"), nullable=True, index=True
+    )
     slug: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
     name_ar: Mapped[str] = mapped_column(String(120), nullable=False)
     name_en: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
@@ -174,6 +329,9 @@ class Course(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     public_id: Mapped[str] = mapped_column(String(32), unique=True, default=_uuid, index=True)
+    tenant_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("tenants.id"), nullable=True, index=True
+    )
     code: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
     title_ar: Mapped[str] = mapped_column(String(255), nullable=False)
     title_en: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -231,6 +389,9 @@ class Course(Base):
     )
     discussions: Mapped[List["DiscussionThread"]] = relationship(
         "DiscussionThread", back_populates="course", cascade="all, delete-orphan"
+    )
+    assignments: Mapped[List["Assignment"]] = relationship(
+        "Assignment", back_populates="course", cascade="all, delete-orphan"
     )
 
 
@@ -414,6 +575,7 @@ class Assignment(Base):
     max_score: Mapped[float] = mapped_column(Float, default=100.0, nullable=False)
     rubric: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
+    course: Mapped["Course"] = relationship("Course", back_populates="assignments")
     submissions: Mapped[List["AssignmentSubmission"]] = relationship(
         "AssignmentSubmission", back_populates="assignment", cascade="all, delete-orphan"
     )

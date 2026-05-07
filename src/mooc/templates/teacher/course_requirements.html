@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}امتثال المقرر — {{ course.title_ar }}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <p><a href="/teacher/courses/{{ course.id }}">← الرجوع لمحرر المقرر</a></p>
+  <h1>تقرير امتثال NELC — {{ course.title_ar }}</h1>
+  <p class="muted">
+    تقييم تلقائي لمدى استيفاء المقرر لمتطلبات المركز الوطني للتعليم
+    الإلكتروني (إلزامية، اختيارية، تميز). البنود المُعلَّمة "يدوي" تتطلب
+    رفع دليل ومراجعة بشرية.
+  </p>
+
+  <div class="card mb-2">
+    <h2>الملخص</h2>
+    <ul>
+      <li>إجمالي المتطلبات: <strong>{{ report.summary.total }}</strong></li>
+      <li>محقق: <strong>{{ report.summary.passed }}</strong></li>
+      <li>غير محقق: <strong>{{ report.summary.failed }}</strong></li>
+      <li>تحتاج مراجعة يدوية: <strong>{{ report.summary.manual }}</strong></li>
+    </ul>
+    {% if report.can_publish %}
+      <p style="color:#1b6e36"><strong>✓ المقرر مستوفٍ لجميع المتطلبات الإلزامية ويصلح للإرسال للمراجعة.</strong></p>
+    {% else %}
+      <p style="color:#a8071a"><strong>✗ توجد متطلبات إلزامية غير مكتملة، أكملها أولاً.</strong></p>
+    {% endif %}
+  </div>
+
+  <div class="card mb-2">
+    <h2>التوزيع حسب المستوى</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>المستوى</th>
+          <th>محقق</th>
+          <th>غير محقق</th>
+          <th>يدوي</th>
+          <th>الإجمالي</th>
+          <th>النسبة</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for level_key, label in [("mandatory", "إلزامي"), ("optional", "اختياري"), ("excellence", "تميز")] %}
+          {% set b = report.by_level[level_key] %}
+          <tr>
+            <th scope="row">{{ label }}</th>
+            <td>{{ b.pass }}</td>
+            <td>{{ b.fail }}</td>
+            <td>{{ b.manual }}</td>
+            <td>{{ b.total }}</td>
+            <td>{{ b.percent }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% for level_key, label, intro in [
+        ("mandatory", "متطلبات إلزامية", "هذه البنود يجب أن تكون 'محقق' كاملةً قبل إرسال المقرر للمراجعة."),
+        ("optional", "متطلبات اختيارية", "تحسينات مستحبة لرفع جودة المقرر."),
+        ("excellence", "متطلبات التميز", "ميزات عليا تمنح المقرر تصنيف متميز."),
+      ] %}
+    <article class="card mb-2">
+      <h2>{{ label }}</h2>
+      <p class="muted">{{ intro }}</p>
+      <ul>
+        {% for r in report.results if r.level == level_key %}
+          <li>
+            {% if r.verdict == "pass" %}
+              <span aria-label="محقق" title="محقق">✓</span>
+            {% elif r.verdict == "fail" %}
+              <span aria-label="غير محقق" title="غير محقق" style="color:#a8071a">✗</span>
+            {% else %}
+              <span aria-label="يدوي" title="يحتاج مراجعة يدوية">●</span>
+            {% endif %}
+            <strong>{{ r.code }} — {{ r.title_ar }}</strong>
+            <span class="muted">({{ r.title_en }})</span>
+            <p>{{ r.description_ar }}</p>
+            {% if r.detail_ar %}<p class="muted">{{ r.detail_ar }}</p>{% endif %}
+            {% if r.nelc_refs %}
+              <p class="muted">معايير ذات صلة:
+                {% for ref in r.nelc_refs %}<code>{{ ref }}</code>{% if not loop.last %}، {% endif %}{% endfor %}
+              </p>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </article>
+  {% endfor %}
+</section>
+{% endblock %}

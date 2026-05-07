@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}الأسعار والباقات{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <header class="hero">
+    <h1>اختر الباقة المناسبة لمنصتك</h1>
+    <p class="lead">منصة عربية متكاملة لإطلاق دوراتك الإلكترونية، متوافقة مع معايير المركز الوطني للتعليم الإلكتروني (NELC).</p>
+  </header>
+
+  <div class="grid grid-3 mt-3">
+    {% for plan in plans %}
+      <article class="card pricing-card{% if plan.is_default %} pricing-card--featured{% endif %}">
+        {% if plan.is_default %}<span class="badge badge-accent">الأكثر طلباً</span>{% endif %}
+        <h2>{{ plan.name_ar }}</h2>
+        <p class="muted">{{ plan.description_ar }}</p>
+
+        <div class="price">
+          <strong>{{ "%.0f"|format(plan.price_monthly_sar) }}</strong>
+          <span class="muted">ر.س / شهرياً</span>
+        </div>
+        <p class="muted small">أو {{ "%.0f"|format(plan.price_yearly_sar) }} ر.س سنوياً (وفّر 20٪)</p>
+
+        <ul class="feature-list">
+          <li>👥 حتى {{ plan.max_students or "∞" }} طالب</li>
+          <li>📚 حتى {{ plan.max_courses or "∞" }} مقرر</li>
+          <li>🛡️ حتى {{ plan.max_admins }} مدير</li>
+          {% for f in plan.features %}<li>✓ {{ f }}</li>{% endfor %}
+        </ul>
+
+        <a class="btn btn-block btn-accent" href="/signup?plan={{ plan.code.value }}&period=monthly">
+          ابدأ تجربة مجانية ١٤ يوماً
+        </a>
+      </article>
+    {% endfor %}
+  </div>
+
+  <p class="muted mt-3 center">
+    جميع الباقات تشمل: استضافة عربية كاملة (إقامة بيانات في المملكة) ·
+    شهادات قابلة للتحقق · تكامل xAPI/SCORM · مساعد ذكاء اصطناعي محلي.
+  </p>
+</section>
+{% endblock %}

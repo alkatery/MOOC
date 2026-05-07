@@ -8,6 +8,8 @@ from typing import Dict, List, Tuple
 from sqlalchemy.orm import Session
 
 from ..models import (
+    Assignment,
+    AssignmentSubmission,
     Course,
     Enrollment,
     EnrollmentStatus,
@@ -47,6 +49,39 @@ def grade_question(question: Question, answer) -> Tuple[float, bool]:
         return 0.0, False
 
     return (question.points if is_correct else 0.0, is_correct)
+
+
+def regrade_attempt_with_manual(
+    db: Session, attempt: QuizAttempt, manual_scores: Dict[str, float]
+) -> QuizAttempt:
+    """Apply manually-entered essay scores to an existing attempt.
+
+    ``manual_scores`` maps question_id (str) → earned points. The
+    attempt's stored ``answers`` dict is updated in place so the
+    student sees the new totals on `/student` and certificates use the
+    correct final grade.
+    """
+    detail = dict(attempt.answers or {})
+    auto_total = 0.0
+    max_total = 0.0
+    for question in attempt.quiz.questions:
+        max_total += question.points
+        qid = str(question.id)
+        entry = detail.get(qid) or {"given": None, "earned": 0.0, "correct": False, "max": question.points}
+        if question.question_type == QuestionType.ESSAY and qid in manual_scores:
+            earned = max(0.0, min(float(manual_scores[qid]), question.points))
+            entry["earned"] = earned
+            entry["correct"] = earned >= question.points
+            entry["manual"] = True
+        detail[qid] = entry
+        auto_total += float(entry.get("earned") or 0.0)
+    attempt.answers = detail
+    attempt.score = round(auto_total, 2)
+    attempt.max_score = round(max_total, 2)
+    if max_total > 0:
+        attempt.passed = (auto_total / max_total * 100.0) >= attempt.quiz.passing_score
+    db.flush()
+    return attempt
 
 
 def grade_attempt(
@@ -111,18 +146,76 @@ def recompute_progress(db: Session, enrollment: Enrollment) -> Enrollment:
 
 
 def compute_final_grade(db: Session, enrollment: Enrollment) -> float:
-    """Average of all quiz attempts for the enrollment."""
+    """Weighted average of quiz attempts and assignment submissions.
+
+    Defaults to 50/50 between the two components. If the course only has
+    quizzes (or only has assignments), the present component takes 100%.
+    Missing assignments count as zeros so a student cannot earn a
+    certificate without submitting.
+    """
+    quiz_pct = _quiz_average_percent(db, enrollment)
+    assignment_pct = _assignment_average_percent(db, enrollment)
+
+    quiz_weight = 0.5 if quiz_pct is not None else 0.0
+    assignment_weight = 0.5 if assignment_pct is not None else 0.0
+    if quiz_weight == 0.0 and assignment_weight == 0.0:
+        return 0.0
+    if quiz_weight == 0.0:
+        return round(assignment_pct or 0.0, 2)
+    if assignment_weight == 0.0:
+        return round(quiz_pct or 0.0, 2)
+
+    total_weight = quiz_weight + assignment_weight
+    weighted = (
+        (quiz_pct or 0.0) * quiz_weight + (assignment_pct or 0.0) * assignment_weight
+    ) / total_weight
+    return round(weighted, 2)
+
+
+def _quiz_average_percent(db: Session, enrollment: Enrollment):
     attempts = (
         db.query(QuizAttempt)
-        .filter(QuizAttempt.enrollment_id == enrollment.id)
+        .filter(
+            QuizAttempt.enrollment_id == enrollment.id,
+            QuizAttempt.submitted_at.isnot(None),
+        )
         .all()
     )
     if not attempts:
-        return 0.0
-    scores = []
-    for a in attempts:
-        if a.max_score:
-            scores.append(a.score / a.max_score * 100.0)
+        return None
+    scores = [a.score / a.max_score * 100.0 for a in attempts if a.max_score]
     if not scores:
-        return 0.0
-    return round(sum(scores) / len(scores), 2)
+        return None
+    return sum(scores) / len(scores)
+
+
+def _assignment_average_percent(db: Session, enrollment: Enrollment):
+    """Average graded-assignment percentage for the enrollment's course.
+
+    Unsubmitted or ungraded assignments count as 0 so the student must
+    actually do the work.
+    """
+    assignments = (
+        db.query(Assignment)
+        .filter(Assignment.course_id == enrollment.course_id)
+        .all()
+    )
+    if not assignments:
+        return None
+    total = 0.0
+    for a in assignments:
+        if not a.max_score:
+            continue
+        sub = (
+            db.query(AssignmentSubmission)
+            .filter(
+                AssignmentSubmission.assignment_id == a.id,
+                AssignmentSubmission.user_id == enrollment.user_id,
+                AssignmentSubmission.score.isnot(None),
+            )
+            .order_by(AssignmentSubmission.graded_at.desc())
+            .first()
+        )
+        if sub:
+            total += (sub.score or 0.0) / a.max_score * 100.0
+    return total / len(assignments)

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}متطلبات نظام الدورات NELC{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <h1>متطلبات نظام الدورات وفق المركز الوطني للتعليم الإلكتروني (NELC)</h1>
+  <p>
+    تتبنى المنصة التصنيف الرسمي الذي يضعه المركز الوطني للتعليم الإلكتروني
+    لمتطلبات أنظمة المقررات الإلكترونية، مقسماً إلى ثلاثة مستويات:
+    <strong>إلزامي</strong>، <strong>اختياري</strong>،
+    و<strong>تميز</strong>. لا يُسمح بنشر مقرر قبل استيفاء جميع المتطلبات
+    الإلزامية، فيما تُسهم متطلبات التميز في رفع تصنيف المقرر.
+  </p>
+
+  <div class="card mb-2">
+    <ul>
+      <li>المتطلبات الإلزامية: <strong>{{ req_summary.mandatory }}</strong></li>
+      <li>المتطلبات الاختيارية: <strong>{{ req_summary.optional }}</strong></li>
+      <li>متطلبات التميز: <strong>{{ req_summary.excellence }}</strong></li>
+      <li>الإجمالي: <strong>{{ req_summary.total }}</strong></li>
+    </ul>
+    <p class="muted">
+      راجع كذلك <a href="/nelc-standards">معايير الجودة الكاملة (8 مجالات / {{ nelc_total_criteria }} معيار)</a>
+      المرتبطة بكل متطلب.
+    </p>
+  </div>
+
+  <article class="card mb-2" aria-labelledby="lvl-mandatory">
+    <h2 id="lvl-mandatory">١. المتطلبات الإلزامية</h2>
+    <p class="muted">
+      شرط لا يمكن نشر المقرر بدونه. كل عنصر هنا يجب أن يكون مستوفى قبل
+      إرسال المقرر للمراجعة.
+    </p>
+    <ol>
+      {% for r in mandatory %}
+        <li>
+          <strong>{{ r.code }} — {{ r.title_ar }}</strong>
+          <span class="muted">({{ r.title_en }})</span>
+          <p>{{ r.description_ar }}</p>
+          {% if r.nelc_refs %}
+            <p class="muted">المعايير المرتبطة:
+              {% for ref in r.nelc_refs %}<code>{{ ref }}</code>{% if not loop.last %}، {% endif %}{% endfor %}
+            </p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </article>
+
+  <article class="card mb-2" aria-labelledby="lvl-optional">
+    <h2 id="lvl-optional">٢. المتطلبات الاختيارية</h2>
+    <p class="muted">
+      تعزز جودة تجربة المتعلم لكنها غير مانعة من النشر.
+    </p>
+    <ol>
+      {% for r in optional %}
+        <li>
+          <strong>{{ r.code }} — {{ r.title_ar }}</strong>
+          <span class="muted">({{ r.title_en }})</span>
+          <p>{{ r.description_ar }}</p>
+          {% if r.nelc_refs %}
+            <p class="muted">المعايير المرتبطة:
+              {% for ref in r.nelc_refs %}<code>{{ ref }}</code>{% if not loop.last %}، {% endif %}{% endfor %}
+            </p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </article>
+
+  <article class="card mb-2" aria-labelledby="lvl-excellence">
+    <h2 id="lvl-excellence">٣. متطلبات التميز</h2>
+    <p class="muted">
+      ميزات عالية المستوى تَمنح المقرر تصنيف "متميز" في نظام اعتماد NELC.
+    </p>
+    <ol>
+      {% for r in excellence %}
+        <li>
+          <strong>{{ r.code }} — {{ r.title_ar }}</strong>
+          <span class="muted">({{ r.title_en }})</span>
+          <p>{{ r.description_ar }}</p>
+          {% if r.nelc_refs %}
+            <p class="muted">المعايير المرتبطة:
+              {% for ref in r.nelc_refs %}<code>{{ ref }}</code>{% if not loop.last %}، {% endif %}{% endfor %}
+            </p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </article>
+</section>
+{% endblock %}

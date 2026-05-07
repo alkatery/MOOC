@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}إعدادات المنصة{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav class="breadcrumbs"><a href="/admin">← لوحة الإدارة</a></nav>
+  <h1>إعدادات منصة "{{ tenant.display_name }}"</h1>
+  <p class="muted">
+    عدّل الهوية البصرية، الروابط الاجتماعية، السياسات، والمسميات الظاهرة
+    للمستخدمين. يمكنك أيضاً
+    <a href="/tenant/pages">إدارة الصفحات المخصصة</a> و
+    <a href="/tenant/billing">الباقة والفوترة</a>.
+  </p>
+
+  <details class="card mb-2" open>
+    <summary><h2 style="display:inline">🎨 الهوية البصرية والمحتوى التعريفي</h2></summary>
+    <form method="post" action="/tenant/settings/branding" class="stacked mt-2">
+      <div class="form-field">
+        <label for="name_ar">الاسم بالعربية</label>
+        <input type="text" name="name_ar" id="name_ar" value="{{ tenant.name_ar }}" required>
+      </div>
+      <div class="form-field">
+        <label for="name_en">الاسم بالإنجليزية</label>
+        <input type="text" name="name_en" id="name_en" value="{{ tenant.name_en or '' }}">
+      </div>
+      <div class="form-field">
+        <label for="tagline_ar">شعار قصير (Tagline)</label>
+        <input type="text" name="tagline_ar" id="tagline_ar" value="{{ tenant.tagline_ar or '' }}" maxlength="255"
+               placeholder="مثال: تعليم متميز للجميع">
+      </div>
+      <div class="form-field">
+        <label for="about_ar">نبذة تعريفية</label>
+        <textarea name="about_ar" id="about_ar" rows="5" placeholder="من نحن، رؤيتنا، أهدافنا...">{{ tenant.about_ar or '' }}</textarea>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="form-field">
+          <label for="contact_email">بريد التواصل</label>
+          <input type="email" name="contact_email" id="contact_email" value="{{ tenant.contact_email or '' }}">
+        </div>
+        <div class="form-field">
+          <label for="contact_phone">الهاتف</label>
+          <input type="tel" name="contact_phone" id="contact_phone" value="{{ tenant.contact_phone or '' }}">
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="logo_url">رابط الشعار (URL)</label>
+        <input type="url" name="logo_url" id="logo_url" value="{{ tenant.logo_url or '' }}"
+               placeholder="https://example.com/logo.png">
+        <span class="form-help">ارفع الشعار على رابط ثابت (CDN/تخزين سحابي) ثم ضع الرابط هنا. يُفضّل PNG شفاف.</span>
+      </div>
+      <div class="form-field">
+        <label for="favicon_url">رابط أيقونة التبويب (Favicon)</label>
+        <input type="url" name="favicon_url" id="favicon_url" value="{{ tenant.favicon_url or '' }}">
+      </div>
+
+      <h3>ألوان الثيم</h3>
+      <div class="grid grid-4">
+        <div class="form-field">
+          <label for="primary_color">اللون الرئيسي</label>
+          <input type="color" name="primary_color" id="primary_color" value="{{ tenant.primary_color }}">
+        </div>
+        <div class="form-field">
+          <label for="accent_color">لون التمييز</label>
+          <input type="color" name="accent_color" id="accent_color" value="{{ tenant.accent_color }}">
+        </div>
+        <div class="form-field">
+          <label for="background_color">الخلفية</label>
+          <input type="color" name="background_color" id="background_color" value="{{ tenant.background_color }}">
+        </div>
+        <div class="form-field">
+          <label for="text_color">النص</label>
+          <input type="color" name="text_color" id="text_color" value="{{ tenant.text_color }}">
+        </div>
+      </div>
+
+      <button class="btn btn-accent" type="submit">حفظ الهوية</button>
+    </form>
+  </details>
+
+  <details class="card mb-2">
+    <summary><h2 style="display:inline">🔗 حسابات التواصل الاجتماعي</h2></summary>
+    {% set social = tenant.social_links or {} %}
+    <form method="post" action="/tenant/settings/social" class="stacked mt-2">
+      <div class="grid grid-2">
+        <div class="form-field">
+          <label>الموقع الإلكتروني</label>
+          <input type="url" name="website" value="{{ social.get('website', '') }}" placeholder="https://...">
+        </div>
+        <div class="form-field">
+          <label>تويتر / X</label>
+          <input type="url" name="twitter" value="{{ social.get('twitter', '') }}" placeholder="https://x.com/...">
+        </div>
+        <div class="form-field">
+          <label>لينكد إن</label>
+          <input type="url" name="linkedin" value="{{ social.get('linkedin', '') }}" placeholder="https://linkedin.com/...">
+        </div>
+        <div class="form-field">
+          <label>إنستغرام</label>
+          <input type="url" name="instagram" value="{{ social.get('instagram', '') }}">
+        </div>
+        <div class="form-field">
+          <label>يوتيوب</label>
+          <input type="url" name="youtube" value="{{ social.get('youtube', '') }}">
+        </div>
+        <div class="form-field">
+          <label>فيسبوك</label>
+          <input type="url" name="facebook" value="{{ social.get('facebook', '') }}">
+        </div>
+        <div class="form-field">
+          <label>تيك توك</label>
+          <input type="url" name="tiktok" value="{{ social.get('tiktok', '') }}">
+        </div>
+        <div class="form-field">
+          <label>سناب شات</label>
+          <input type="url" name="snapchat" value="{{ social.get('snapchat', '') }}">
+        </div>
+      </div>
+      <button class="btn btn-accent" type="submit">حفظ الروابط</button>
+    </form>
+  </details>
+
+  <details class="card mb-2">
+    <summary><h2 style="display:inline">📜 السياسات</h2></summary>
+    {% set pol = tenant.policies or {} %}
+    <form method="post" action="/tenant/settings/policies" class="stacked mt-2">
+      <div class="form-field">
+        <label>سياسة الخصوصية</label>
+        <textarea name="privacy" rows="6">{{ pol.get('privacy', '') }}</textarea>
+      </div>
+      <div class="form-field">
+        <label>شروط الاستخدام</label>
+        <textarea name="terms" rows="6">{{ pol.get('terms', '') }}</textarea>
+      </div>
+      <div class="form-field">
+        <label>سياسة الاسترداد</label>
+        <textarea name="refund" rows="4">{{ pol.get('refund', '') }}</textarea>
+      </div>
+      <div class="form-field">
+        <label>ميثاق السلوك (Code of Conduct)</label>
+        <textarea name="code_of_conduct" rows="4">{{ pol.get('code_of_conduct', '') }}</textarea>
+      </div>
+      <button class="btn btn-accent" type="submit">حفظ السياسات</button>
+    </form>
+  </details>
+
+  <details class="card mb-2">
+    <summary><h2 style="display:inline">🏷 المسميات الظاهرة (تخصيص اللغة)</h2></summary>
+    {% set lab = tenant.custom_labels or {} %}
+    <p class="muted mt-1">
+      غيّر المسميات الافتراضية لتلائم سياق منصتك. مثلاً: "مقرر" ↦ "حقيبة تدريبية" أو "برنامج".
+    </p>
+    <form method="post" action="/tenant/settings/labels" class="stacked mt-2">
+      <div class="grid grid-2">
+        <div class="form-field"><label>"مقرر" (Course)</label><input type="text" name="label_course" value="{{ lab.get('course', '') }}" placeholder="مقرر / حقيبة / برنامج"></div>
+        <div class="form-field"><label>"المقررات"</label><input type="text" name="label_courses" value="{{ lab.get('courses', '') }}" placeholder="المقررات / الحقائب"></div>
+        <div class="form-field"><label>"درس" (Lesson)</label><input type="text" name="label_lesson" value="{{ lab.get('lesson', '') }}" placeholder="درس / وحدة / فيديو"></div>
+        <div class="form-field"><label>"معلم" (Instructor)</label><input type="text" name="label_instructor" value="{{ lab.get('instructor', '') }}" placeholder="معلم / مدرب / مستشار"></div>
+        <div class="form-field"><label>"طالب" (Student)</label><input type="text" name="label_student" value="{{ lab.get('student', '') }}" placeholder="طالب / متدرب / متعلم"></div>
+        <div class="form-field"><label>"التسجيل" (Enroll)</label><input type="text" name="label_enroll" value="{{ lab.get('enroll', '') }}" placeholder="التحاق / انضمام"></div>
+        <div class="form-field"><label>"الفهرس" (Catalog)</label><input type="text" name="label_catalog" value="{{ lab.get('catalog', '') }}" placeholder="الفهرس / الحقائب"></div>
+      </div>
+      <button class="btn btn-accent" type="submit">حفظ المسميات</button>
+    </form>
+  </details>
+</section>
+{% endblock %}

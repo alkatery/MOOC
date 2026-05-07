@@ -3,30 +3,52 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="منصة مساقات إلكترونية مفتوحة متوافقة مع معايير المركز الوطني للتعليم الإلكتروني NELC">
-  <title>{% block title %}{{ settings.platform_name_ar }}{% endblock %}</title>
+  <meta name="description" content="{% if tenant and tenant.tagline_ar %}{{ tenant.tagline_ar }}{% else %}منصة مساقات إلكترونية مفتوحة متوافقة مع معايير المركز الوطني للتعليم الإلكتروني NELC{% endif %}">
+  <title>{% block title %}{% if tenant %}{{ tenant.display_name }}{% else %}{{ settings.platform_name_ar }}{% endif %}{% endblock %}{% if tenant %} — {{ tenant.display_name }}{% endif %}</title>
   <link rel="stylesheet" href="/static/css/app.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎓%3C/text%3E%3C/svg%3E">
+  {% if tenant %}
+  <style>
+    :root{
+      --brand-primary: {{ tenant.primary_color }};
+      --brand-accent: {{ tenant.accent_color }};
+      --brand-bg: {{ tenant.background_color }};
+      --brand-text: {{ tenant.text_color }};
+    }
+  </style>
+  {% endif %}
+  {% if tenant and tenant.favicon_url %}
+    <link rel="icon" href="{{ tenant.favicon_url }}">
+  {% else %}
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎓%3C/text%3E%3C/svg%3E">
+  {% endif %}
 </head>
 <body>
   <a href="#main" class="skip-link">تخطَّ إلى المحتوى الرئيسي</a>
 
   <header class="site-header" role="banner">
-    <div class="container">
+    <div class="container header-inner">
       <a class="brand" href="/" aria-label="الصفحة الرئيسية">
-        <span aria-hidden="true">🎓</span>
-        <span>{{ settings.platform_name_ar }}</span>
+        {% if tenant and tenant.logo_url %}
+          <img src="{{ tenant.logo_url }}" alt="{{ tenant.display_name }}" class="brand-logo">
+        {% else %}
+          <span aria-hidden="true">🎓</span>
+        {% endif %}
+        <span>{% if tenant %}{{ tenant.display_name }}{% else %}{{ settings.platform_name_ar }}{% endif %}</span>
       </a>
-      <nav role="navigation" aria-label="القائمة الرئيسية">
-        <a href="/catalog">فهرس المقررات</a>
+      <nav role="navigation" aria-label="القائمة الرئيسية" class="primary-nav">
+        <a href="/catalog">{{ tenant_label("catalog", "فهرس المقررات") }}</a>
+        {% if nav_pages %}
+          {% for p in nav_pages %}<a href="/p/{{ p.slug }}">{{ p.title_ar }}</a>{% endfor %}
+        {% endif %}
+        <a href="/pricing">الأسعار</a>
         <a href="/nelc-standards">معايير NELC</a>
-        <a href="/verify-certificate">تحقق من شهادة</a>
         <a href="/about">عن المنصة</a>
       </nav>
       <nav class="auth-links" aria-label="حساب المستخدم">
         {% if user %}
           {% if user.role.value == "admin" %}
             <a href="/admin">لوحة الإدارة</a>
+            <a href="/tenant/settings">إعدادات المنصة</a>
           {% elif user.role.value == "instructor" %}
             <a href="/teacher">لوحة المعلم</a>
           {% elif user.role.value == "reviewer" %}
@@ -37,7 +59,7 @@
           <a href="/logout">تسجيل الخروج</a>
         {% else %}
           <a href="/login">تسجيل الدخول</a>
-          <a href="/register">إنشاء حساب</a>
+          <a href="/signup" class="btn btn-sm btn-accent">ابدأ مجاناً</a>
         {% endif %}
       </nav>
     </div>
@@ -48,16 +70,62 @@
   </main>
 
   <footer class="site-footer" role="contentinfo">
-    <div class="container">
-      <p>
-        <strong>{{ settings.platform_name_ar }}</strong> — منصة مساقات إلكترونية مفتوحة.
-        متوافقة مع معايير <a href="https://nelc.gov.sa" target="_blank" rel="noopener noreferrer">المركز الوطني للتعليم الإلكتروني (NELC)</a>.
-      </p>
-      <p class="muted">
-        <a href="/privacy">سياسة الخصوصية</a> ·
-        <a href="/nelc-standards">معايير الجودة</a> ·
-        إقامة البيانات: {{ settings.data_residency_region }}
-      </p>
+    <div class="container footer-grid">
+      <div>
+        <p>
+          <strong>{% if tenant %}{{ tenant.display_name }}{% else %}{{ settings.platform_name_ar }}{% endif %}</strong>
+          {% if tenant and tenant.tagline_ar %}— {{ tenant.tagline_ar }}{% endif %}
+        </p>
+        {% if tenant and tenant.about_ar %}
+          <p class="muted small">{{ tenant.about_ar[:240] }}{% if tenant.about_ar|length > 240 %}…{% endif %}</p>
+        {% endif %}
+        <p class="muted small">
+          متوافقة مع معايير
+          <a href="https://nelc.gov.sa" target="_blank" rel="noopener noreferrer">المركز الوطني للتعليم الإلكتروني (NELC)</a>.
+        </p>
+      </div>
+
+      <div>
+        <h4>روابط</h4>
+        <ul class="plain">
+          <li><a href="/privacy">سياسة الخصوصية</a></li>
+          <li><a href="/p/terms">شروط الاستخدام</a></li>
+          <li><a href="/nelc-standards">معايير الجودة</a></li>
+          <li><a href="/nelc/course-requirements">متطلبات الدورات</a></li>
+          {% if nav_pages %}
+            {% for p in nav_pages %}<li><a href="/p/{{ p.slug }}">{{ p.title_ar }}</a></li>{% endfor %}
+          {% endif %}
+        </ul>
+      </div>
+
+      {% if tenant %}
+        <div>
+          <h4>تواصل</h4>
+          <ul class="plain">
+            {% if tenant.contact_email %}<li>📧 <a href="mailto:{{ tenant.contact_email }}">{{ tenant.contact_email }}</a></li>{% endif %}
+            {% if tenant.contact_phone %}<li>📞 {{ tenant.contact_phone }}</li>{% endif %}
+          </ul>
+          {% set social = tenant.social_links or {} %}
+          {% if social %}
+            <p class="social-links">
+              {% if social.twitter %}<a href="{{ social.twitter }}" target="_blank" rel="noopener" aria-label="X / Twitter">𝕏</a>{% endif %}
+              {% if social.linkedin %}<a href="{{ social.linkedin }}" target="_blank" rel="noopener" aria-label="LinkedIn">in</a>{% endif %}
+              {% if social.instagram %}<a href="{{ social.instagram }}" target="_blank" rel="noopener" aria-label="Instagram">📷</a>{% endif %}
+              {% if social.youtube %}<a href="{{ social.youtube }}" target="_blank" rel="noopener" aria-label="YouTube">▶</a>{% endif %}
+              {% if social.facebook %}<a href="{{ social.facebook }}" target="_blank" rel="noopener" aria-label="Facebook">f</a>{% endif %}
+              {% if social.tiktok %}<a href="{{ social.tiktok }}" target="_blank" rel="noopener" aria-label="TikTok">🎵</a>{% endif %}
+              {% if social.snapchat %}<a href="{{ social.snapchat }}" target="_blank" rel="noopener" aria-label="Snapchat">👻</a>{% endif %}
+              {% if social.website %}<a href="{{ social.website }}" target="_blank" rel="noopener" aria-label="الموقع">🌐</a>{% endif %}
+            </p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <div>
+        <h4>المنصة</h4>
+        <p class="muted small">إقامة البيانات: {{ settings.data_residency_region }}</p>
+        <p class="muted small">© {{ "now"|default("") }} {% if tenant %}{{ tenant.display_name }}{% else %}{{ settings.platform_name_ar }}{% endif %}</p>
+      </div>
     </div>
   </footer>
 </body>

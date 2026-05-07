@@ -419,3 +419,134 @@ tbody tr:hover { background: #fafafa; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* =====================================================================
+   SaaS / multi-tenant overrides
+   --brand-* are injected by base.html when a Tenant is active.
+   ===================================================================== */
+
+:root {
+  --brand-primary: var(--primary);
+  --brand-accent:  var(--accent);
+  --brand-bg:      var(--bg);
+  --brand-text:    var(--text);
+}
+
+body { background: var(--brand-bg, var(--bg)); color: var(--brand-text, var(--text)); }
+.site-header { background: var(--brand-primary, var(--primary)); }
+.btn-accent  { background: var(--brand-accent, var(--accent)); color: #fff; border-color: transparent; }
+.btn-accent:hover { filter: brightness(1.08); }
+
+.brand-logo {
+  height: 40px; width: auto; max-width: 160px;
+  object-fit: contain; background: #fff; padding: 4px; border-radius: 4px;
+}
+.header-inner { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+.primary-nav, .auth-links {
+  display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;
+}
+
+/* =====================================================================
+   Hero / landing
+   ===================================================================== */
+
+.hero {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, var(--brand-primary, var(--primary)) 0%, var(--brand-accent, var(--accent)) 100%);
+  color: #fff;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+.hero h1 { font-size: 2rem; margin: 0 0 0.5rem; color: #fff; }
+.hero .lead { font-size: 1.1rem; opacity: 0.95; margin: 0; }
+
+/* =====================================================================
+   Pricing
+   ===================================================================== */
+
+.pricing-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.pricing-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  border-color: var(--brand-accent, var(--accent));
+}
+.pricing-card--featured {
+  border-color: var(--brand-accent, var(--accent));
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.pricing-card .price {
+  font-size: 2rem;
+  color: var(--brand-primary, var(--primary));
+}
+.pricing-card .price strong { font-size: 2.4rem; }
+.feature-list { list-style: none; padding: 0; margin: 0.5rem 0; }
+.feature-list li { padding: 0.35rem 0; border-bottom: 1px dashed var(--border); }
+.feature-list li:last-child { border-bottom: none; }
+
+.btn-block { display: block; width: 100%; text-align: center; }
+.badge-accent {
+  position: absolute; top: -12px; inset-inline-end: 1rem;
+  background: var(--brand-accent, var(--accent));
+  color: #fff; padding: 0.25rem 0.75rem; border-radius: 999px;
+  font-size: 0.85rem; font-weight: 700;
+}
+.center { text-align: center; }
+.small { font-size: 0.875rem; }
+
+/* =====================================================================
+   Footer (multi-column)
+   ===================================================================== */
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+  text-align: start;
+}
+.footer-grid h4 { color: #fff; margin: 0 0 0.5rem; font-size: 1rem; }
+.footer-grid ul.plain { list-style: none; padding: 0; margin: 0; }
+.footer-grid ul.plain li { padding: 0.2rem 0; }
+.social-links {
+  display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;
+}
+.social-links a {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.12); color: #fff !important;
+  text-decoration: none; font-weight: 700;
+}
+.social-links a:hover { background: var(--brand-accent, var(--accent)); }
+
+/* =====================================================================
+   Forms polish + tenant settings
+   ===================================================================== */
+
+.container-narrow { max-width: 720px; }
+details.card > summary { cursor: pointer; padding: 0.5rem 0; list-style-position: inside; }
+details.card[open] > summary { margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+
+.breadcrumbs { font-size: 0.9rem; margin-bottom: 0.5rem; }
+.breadcrumbs a { color: var(--text-muted); }
+
+input[type="color"] { height: 40px; padding: 2px; cursor: pointer; }
+
+.prose { line-height: 1.85; }
+.prose h2, .prose h3 { margin-top: 1.5rem; }
+.prose p { margin: 0 0 1rem; }
+
+/* =====================================================================
+   Grid extras
+   ===================================================================== */
+
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
