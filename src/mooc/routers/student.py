@@ -499,3 +499,74 @@ def assignment_submit(
         f"/student/course/{course_id}/assignment/{assignment_id}",
         status_code=status.HTTP_303_SEE_OTHER,
     )
+
+
+# ---------------------------------------------------------------------------
+# AI tutor
+# ---------------------------------------------------------------------------
+
+
+@router.post("/ai/lesson/{lesson_id}/ask", response_class=HTMLResponse)
+def ai_ask_lesson(
+    lesson_id: int,
+    request: Request,
+    question: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_student_access),
+):
+    from ..services.student_tutor import answer_about_lesson
+
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson:
+        raise HTTPException(status_code=404, detail="الدرس غير موجود")
+    course_id = lesson.module.course_id
+    _enrolled_or_403(db, user, course_id)
+    answer = answer_about_lesson(lesson, question)
+    xapi.record_statement(db, user, "asked", "lesson", lesson.id, commit=True)
+    return templates.TemplateResponse(
+        request,
+        "student/ai_response.html",
+        _ctx(
+            request,
+            user,
+            lesson=lesson,
+            course=lesson.module.course,
+            question=question,
+            answer=answer,
+            back_url=f"/student/lesson/{lesson_id}",
+        ),
+    )
+
+
+@router.post(
+    "/ai/assignment/{assignment_id}/hint", response_class=HTMLResponse
+)
+def ai_hint_assignment(
+    assignment_id: int,
+    request: Request,
+    question: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_student_access),
+):
+    from ..services.student_tutor import hint_for_assignment
+
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="الواجب غير موجود")
+    _enrolled_or_403(db, user, assignment.course_id)
+    answer = hint_for_assignment(db, assignment, question)
+    xapi.record_statement(
+        db, user, "asked-for-hint", "assignment", assignment.id, commit=True
+    )
+    return templates.TemplateResponse(
+        request,
+        "student/ai_response.html",
+        _ctx(
+            request,
+            user,
+            course=assignment.course,
+            question=question,
+            answer=answer,
+            back_url=f"/student/course/{assignment.course_id}/assignment/{assignment_id}",
+        ),
+    )

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}مساعد التعليم الذكي{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="{{ back_url }}">← الرجوع</a></nav>
+  <article class="card">
+    <h1>مساعد التعليم الذكي</h1>
+    <p class="muted">المقرر: {{ course.title_ar }}{% if lesson %} · الدرس: {{ lesson.title_ar }}{% endif %}</p>
+    <h2>سؤالك</h2>
+    <p>{{ question }}</p>
+    <h2>الإجابة</h2>
+    <div style="white-space:pre-wrap; line-height:1.8">{{ answer }}</div>
+    <p class="muted mt-2">
+      ⚠ مولّدة بنموذج ذكاء اصطناعي محلي. تحقق من المعلومات مع المعلم
+      أو من المراجع.
+    </p>
+  </article>
+</section>
+{% endblock %}

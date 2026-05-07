@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}تحليلات المنصة — المساعد الذكي{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/admin">← لوحة التحكم</a></nav>
+  <h1>تحليلات المنصة الذكية</h1>
+  <p class="muted">
+    إحصاءات مُستخرجة من قاعدة البيانات + ملخص إداري يولّده مساعد ذكاء
+    اصطناعي محلي (Ollama). الأرقام دقيقة وقابلة للتدقيق؛ النص الإداري
+    يساعد القراءة السريعة فقط.
+  </p>
+
+  <div class="grid grid-3 mb-3">
+    <div class="stat"><div class="value">{{ insights.totals.students }}</div><div class="label">إجمالي الطلاب</div></div>
+    <div class="stat"><div class="value">{{ insights.totals.active_enrollments }}</div><div class="label">تسجيلات نشطة</div></div>
+    <div class="stat"><div class="value">{{ insights.totals.completed_enrollments }}</div><div class="label">مقررات مكتملة</div></div>
+  </div>
+
+  {% if summary %}
+    <article class="card mb-3" style="background:#f0f7ff">
+      <h2>📊 الملخص الإداري</h2>
+      <p style="white-space:pre-wrap; line-height:1.8">{{ summary }}</p>
+    </article>
+  {% else %}
+    <p>
+      <a class="btn btn-sm btn-accent" href="/admin/insights?summarize=1">
+        🤖 توليد ملخص إداري بالذكاء الاصطناعي
+      </a>
+    </p>
+  {% endif %}
+
+  <article class="card mb-2">
+    <h2>🌟 الطلاب المتميّزون</h2>
+    {% if insights.top_students %}
+      <table>
+        <thead><tr><th>الطالب</th><th>المقرر</th><th>التقدم</th><th>الدرجة</th></tr></thead>
+        <tbody>
+          {% for s in insights.top_students %}
+            <tr><td>{{ s.student_name }}</td><td>{{ s.course_title }}</td><td>{{ s.progress }}٪</td><td>{{ s.grade }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">لا يوجد طلاب متميزون مسجلون حالياً (الحد ≥ 85 درجة وتقدم ≥ 80٪).</p>
+    {% endif %}
+  </article>
+
+  <article class="card mb-2">
+    <h2>⚠ الطلاب المتعثّرون</h2>
+    {% if insights.at_risk_students %}
+      <table>
+        <thead><tr><th>الطالب</th><th>المقرر</th><th>التقدم</th><th>أيام الخمول</th></tr></thead>
+        <tbody>
+          {% for s in insights.at_risk_students %}
+            <tr><td>{{ s.student_name }}</td><td>{{ s.course_title }}</td><td>{{ s.progress }}٪</td><td>{{ s.get("days_inactive", 0) }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">لا يوجد متعثّرون. ✓</p>
+    {% endif %}
+  </article>
+
+  <article class="card mb-2">
+    <h2>🚧 نقاط الاختناق في الدروس</h2>
+    <p class="muted">دروس بدأها كثيرون ولم يكملها أغلبهم — تحتاج مراجعة من المعلم.</p>
+    {% if insights.bottleneck_lessons %}
+      <table>
+        <thead><tr><th>الدرس</th><th>المقرر</th><th>بدأ</th><th>أكمل</th><th>نسبة الإكمال</th></tr></thead>
+        <tbody>
+          {% for l in insights.bottleneck_lessons %}
+            <tr>
+              <td>{{ l.lesson_title }}</td>
+              <td>{{ l.course_title }}</td>
+              <td>{{ l.started }}</td>
+              <td>{{ l.completed }}</td>
+              <td>{{ l.completion_rate }}٪</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">لا توجد نقاط اختناق ملحوظة.</p>
+    {% endif %}
+  </article>
+
+  <article class="card mb-2">
+    <h2>❓ أسئلة كثيرة الخطأ</h2>
+    <p class="muted">أسئلة يخطئ فيها أغلب الطلاب — راجع صياغتها أو تأكد من تغطية الدرس لها.</p>
+    {% if insights.confusing_questions %}
+      <table>
+        <thead><tr><th>السؤال</th><th>نسبة الخطأ</th><th>عدد المحاولات</th></tr></thead>
+        <tbody>
+          {% for q in insights.confusing_questions %}
+            <tr><td>{{ q.text }}</td><td>{{ q.wrong_rate }}٪</td><td>{{ q.total_attempts }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">لا توجد أسئلة مشكلة.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

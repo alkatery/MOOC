@@ -45,5 +45,20 @@
       <button class="btn" type="submit">تسليم</button>
     </form>
   </article>
+
+  <article class="card mt-3">
+    <h2>💡 اطلب تلميحاً من المساعد الذكي</h2>
+    <p class="muted">
+      يقودك المساعد إلى الدرس/الفقرة التي تحتوي الإجابة دون أن يكتب
+      الإجابة لك (سياسة النزاهة الأكاديمية).
+    </p>
+    <form method="post" action="/student/ai/assignment/{{ assignment.id }}/hint" class="stacked">
+      <div class="form-field">
+        <label for="question">ما الذي يصعب عليك في هذا الواجب؟</label>
+        <textarea name="question" id="question" rows="3" required placeholder="مثال: لا أعرف من أين أبدأ في الجزء الثاني"></textarea>
+      </div>
+      <button class="btn btn-sm" type="submit">اطلب تلميحاً</button>
+    </form>
+  </article>
 </section>
 {% endblock %}
