@@ -1,0 +1,41 @@
+# /etc/systemd/system/larning.service
+#
+# Gunicorn process manager for the MOOC platform.
+# Install:
+#   sudo cp deploy/larning.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now larning.service
+# Status / logs:
+#   systemctl status larning
+#   journalctl -u larning -f
+
+[Unit]
+Description=MOOC platform (larning.alkathiri.net) — gunicorn + uvicorn workers
+Requires=larning.socket
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/larning.alkathiri.net
+EnvironmentFile=/var/www/larning.alkathiri.net/.env
+ExecStart=/var/www/larning.alkathiri.net/.venv/bin/gunicorn \
+    --config /var/www/larning.alkathiri.net/deploy/gunicorn.conf.py \
+    mooc.main:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=30
+PrivateTmp=true
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/www/larning.alkathiri.net/var /run
+
+[Install]
+WantedBy=multi-user.target

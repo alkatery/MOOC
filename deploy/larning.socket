@@ -1,0 +1,16 @@
+# /etc/systemd/system/larning.socket
+#
+# Socket-activation unit for gunicorn. Lets nginx start sending requests
+# even before the python workers finish booting (no 502 during reload).
+
+[Unit]
+Description=MOOC platform unix socket
+
+[Socket]
+ListenStream=/run/larning.sock
+SocketUser=www-data
+SocketGroup=www-data
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target

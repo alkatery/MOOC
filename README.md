@@ -118,6 +118,33 @@ src/mooc/
 مؤرشف (Archived)
 ```
 
+## النشر للإنتاج · Production deployment
+
+دليل كامل عربي في [`deploy/DEPLOY.md`](deploy/DEPLOY.md). يغطي مسارَيْن:
+
+- **استضافة Hostinger / cPanel** — مع Passenger ومسار
+  `/home/<user>/domains/<domain>/public_html/<sub>` ودليل خطوة بخطوة
+  لإعداد Python App و PostgreSQL/MySQL والـ SSL.
+- **VPS / Linux** — سكربت تلقائي [`deploy/install.sh`](deploy/install.sh)
+  يثبّت الحزم، ينشئ قاعدة PostgreSQL، يولّد `.env`، ويُشغّل nginx +
+  systemd + gunicorn، ثم certbot للـ HTTPS.
+
+ملفات النشر:
+
+| الملف | الدور |
+|------|------|
+| `deploy/install.sh` | سكربت تلقائي لـ VPS (Ubuntu/Debian) |
+| `deploy/larning.service` + `.socket` | وحدات systemd |
+| `deploy/gunicorn.conf.py` | إعدادات gunicorn |
+| `deploy/nginx.larning.alkathiri.net.conf` | قالب nginx |
+| `deploy/env.production.example` | متغيرات البيئة الإنتاجية |
+| `passenger_wsgi.py` (في الجذر) | مدخل Hostinger / cPanel |
+
+تثبيت تبعيات النشر:
+```bash
+pip install -e ".[deploy]"   # gunicorn + psycopg + a2wsgi
+```
+
 ## SaaS متعدد المنصات · Multi-tenant SaaS
 
 تعمل المنصة كـ **SaaS** يشترك فيه كل عميل (Tenant) بمنصة مستقلة:
