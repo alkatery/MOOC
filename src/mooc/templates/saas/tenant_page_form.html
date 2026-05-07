@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{% if page %}تحرير صفحة{% else %}صفحة جديدة{% endif %}{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav class="breadcrumbs"><a href="/tenant/pages">← الصفحات المخصصة</a></nav>
+  <h1>{% if page %}تحرير صفحة{% else %}صفحة جديدة{% endif %}</h1>
+
+  <form method="post" action="{% if page %}/tenant/pages/{{ page.id }}/edit{% else %}/tenant/pages/new{% endif %}" class="stacked card">
+    <div class="form-field">
+      <label for="title_ar">العنوان</label>
+      <input type="text" name="title_ar" id="title_ar" value="{{ page.title_ar if page else '' }}" required>
+    </div>
+    <div class="form-field">
+      <label for="slug">الرمز (يظهر في الرابط)</label>
+      <input type="text" name="slug" id="slug" value="{{ page.slug if page else '' }}" required pattern="[a-z0-9-]+">
+      <span class="form-help">مثال: <code>about</code> → الرابط <code>/p/about</code></span>
+    </div>
+    <div class="form-field">
+      <label for="body_html">المحتوى (HTML مسموح)</label>
+      <textarea name="body_html" id="body_html" rows="14" required>{{ page.body_html if page else '' }}</textarea>
+    </div>
+    <div class="grid grid-3">
+      <div class="form-field">
+        <label><input type="checkbox" name="is_published" {% if not page or page.is_published %}checked{% endif %}> منشورة</label>
+      </div>
+      <div class="form-field">
+        <label><input type="checkbox" name="show_in_nav" {% if not page or page.show_in_nav %}checked{% endif %}> أظهر في القائمة الرئيسية</label>
+      </div>
+      <div class="form-field">
+        <label for="order_index">ترتيب</label>
+        <input type="number" name="order_index" id="order_index" value="{{ page.order_index if page else 0 }}">
+      </div>
+    </div>
+    <button class="btn btn-accent" type="submit">حفظ</button>
+  </form>
+</section>
+{% endblock %}

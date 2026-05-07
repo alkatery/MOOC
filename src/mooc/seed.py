@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .database import session_scope
 from .models import (
+    BillingPeriod,
     Category,
     Course,
     CourseLevel,
@@ -17,6 +18,12 @@ from .models import (
     Question,
     QuestionType,
     Quiz,
+    Subscription,
+    SubscriptionPlan,
+    SubscriptionPlanCode,
+    SubscriptionStatus,
+    Tenant,
+    TenantPage,
     User,
     UserRole,
 )
@@ -89,20 +96,173 @@ def _ensure_category(db, slug, ar, en, icon):
     return cat
 
 
+def _ensure_plans(db) -> dict:
+    plans_def = [
+        {
+            "code": SubscriptionPlanCode.FREE,
+            "name_ar": "تجريبي",
+            "name_en": "Free Trial",
+            "description_ar": "ابدأ بـ ٥٠ طالباً ومقررين، بدون الذكاء الاصطناعي.",
+            "price_monthly_sar": 0.0,
+            "price_yearly_sar": 0.0,
+            "max_courses": 2,
+            "max_students": 50,
+            "max_admins": 1,
+            "features": ["دعم بريدي", "شهادات قابلة للتحقق", "تكامل xAPI/SCORM"],
+            "is_default": False,
+        },
+        {
+            "code": SubscriptionPlanCode.STANDARD,
+            "name_ar": "قياسي",
+            "name_en": "Standard",
+            "description_ar": "للأكاديميات النامية — مقررات ومتعلمون بلا حدود فعلية.",
+            "price_monthly_sar": 499.0,
+            "price_yearly_sar": 4791.0,
+            "max_courses": 50,
+            "max_students": 1000,
+            "max_admins": 5,
+            "features": [
+                "مساعد ذكاء اصطناعي للطلاب",
+                "تحليلات إدارية ذكية",
+                "تخصيص كامل للهوية",
+                "صفحات مخصصة بلا حدود",
+                "دعم خلال ساعات العمل",
+            ],
+            "is_default": True,
+        },
+        {
+            "code": SubscriptionPlanCode.PREMIUM,
+            "name_ar": "متميّز",
+            "name_en": "Premium",
+            "description_ar": "للمؤسسات الكبيرة — استخدام بلا حدود ودعم مخصص.",
+            "price_monthly_sar": 1999.0,
+            "price_yearly_sar": 19191.0,
+            "max_courses": 0,
+            "max_students": 0,
+            "max_admins": 25,
+            "features": [
+                "كل ميزات الباقة القياسية",
+                "نطاق مخصص (Custom domain)",
+                "تكامل SSO",
+                "اعتماد NELC مرافق",
+                "مدير حساب مخصص",
+                "اتفاقية مستوى الخدمة (SLA)",
+            ],
+            "is_default": False,
+        },
+    ]
+    plans = {}
+    for d in plans_def:
+        existing = (
+            db.query(SubscriptionPlan)
+            .filter(SubscriptionPlan.code == d["code"])
+            .first()
+        )
+        if existing:
+            plans[d["code"].value] = existing
+            continue
+        plan = SubscriptionPlan(**d)
+        db.add(plan)
+        db.flush()
+        plans[d["code"].value] = plan
+    return plans
+
+
+def _ensure_default_tenant(db, plans: dict) -> Tenant:
+    tenant = db.query(Tenant).filter(Tenant.slug == "default").first()
+    if tenant:
+        return tenant
+    tenant = Tenant(
+        slug="default",
+        name_ar="منصة المساقات المفتوحة",
+        name_en="Open MOOC Platform",
+        tagline_ar="تعليم إلكتروني عربي متكامل",
+        about_ar=(
+            "منصة تعليم إلكترونية عربية مفتوحة المصدر، متوافقة مع معايير "
+            "المركز الوطني للتعليم الإلكتروني (NELC)، تساعد المؤسسات على "
+            "إطلاق مقررات احترافية بسرعة."
+        ),
+        contact_email="hello@mooc.sa",
+        primary_color="#006c35",
+        accent_color="#c8a85a",
+        background_color="#fafafa",
+        text_color="#1a1a1a",
+        social_links={
+            "twitter": "https://x.com/saudi_nelc",
+            "website": "https://nelc.gov.sa",
+        },
+        policies={"privacy": "تُحفظ بيانات الطلاب داخل المملكة وتُحذف عند الطلب."},
+        custom_labels={},
+    )
+    db.add(tenant)
+    db.flush()
+
+    sub = Subscription(
+        tenant_id=tenant.id,
+        plan_id=plans["premium"].id,
+        period=BillingPeriod.YEARLY,
+        status=SubscriptionStatus.ACTIVE,
+        starts_at=datetime.utcnow(),
+        current_period_end=datetime.utcnow() + timedelta(days=365),
+    )
+    db.add(sub)
+
+    # Sample custom pages
+    for slug, title, body in (
+        (
+            "about",
+            "عن المنصة",
+            "<p>منصة عربية مفتوحة لإطلاق دوراتك الإلكترونية وفق أعلى المعايير.</p>",
+        ),
+        (
+            "terms",
+            "شروط الاستخدام",
+            "<p>باستخدامك للمنصة، توافق على الالتزام بسياسات النزاهة الأكاديمية وحقوق الملكية الفكرية.</p>",
+        ),
+        (
+            "faq",
+            "الأسئلة الشائعة",
+            "<h3>هل المحتوى متاح بالعربية؟</h3><p>نعم، جميع الواجهات والمحتوى الافتراضي بالعربية الفصحى.</p>",
+        ),
+    ):
+        db.add(
+            TenantPage(
+                tenant_id=tenant.id,
+                slug=slug,
+                title_ar=title,
+                body_html=body,
+                is_published=True,
+                show_in_nav=(slug != "terms"),
+            )
+        )
+    return tenant
+
+
 def run_seed() -> None:
     with session_scope() as db:
+        plans = _ensure_plans(db)
+        tenant = _ensure_default_tenant(db, plans)
         users = {
             u["email"]: _ensure_user(db, **u) for u in DEMO_USERS
         }
+        # Tag demo users with the default tenant
+        for u in users.values():
+            if u.tenant_id is None:
+                u.tenant_id = tenant.id
+
         categories = {
             slug: _ensure_category(db, slug, ar, en, icon)
             for slug, ar, en, icon in CATEGORIES
         }
+        for c in categories.values():
+            if c.tenant_id is None:
+                c.tenant_id = tenant.id
 
         instructor = users["teacher@mooc.sa"]
 
         if db.query(Course).filter(Course.code == "CS101").first() is None:
             course = Course(
+                tenant_id=tenant.id,
                 code="CS101",
                 title_ar="مقدمة في علوم الحاسب",
                 title_en="Introduction to Computer Science",

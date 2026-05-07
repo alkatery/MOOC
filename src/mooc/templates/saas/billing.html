@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}الباقة والفوترة{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav class="breadcrumbs"><a href="/tenant/settings">← إعدادات المنصة</a></nav>
+  <h1>الباقة والفوترة</h1>
+
+  {% if subscription %}
+    <article class="card">
+      <h2>اشتراكك الحالي</h2>
+      <ul>
+        <li>الباقة: <strong>{{ subscription.plan.name_ar }}</strong></li>
+        <li>الفترة: <strong>{{ "شهري" if subscription.period.value == "monthly" else "سنوي" }}</strong></li>
+        <li>الحالة: <strong>{{ subscription.status.value }}</strong></li>
+        {% if subscription.trial_ends_at %}<li>نهاية التجربة: {{ subscription.trial_ends_at.strftime("%Y-%m-%d") }}</li>{% endif %}
+        {% if subscription.current_period_end %}<li>تنتهي الفترة الحالية: {{ subscription.current_period_end.strftime("%Y-%m-%d") }}</li>{% endif %}
+        {% if subscription.last_payment_amount %}<li>آخر دفعة: {{ "%.0f"|format(subscription.last_payment_amount) }} ر.س</li>{% endif %}
+      </ul>
+    </article>
+  {% endif %}
+
+  <h2 class="mt-3">تغيير الباقة</h2>
+  <form method="post" action="/tenant/billing/change" class="stacked card">
+    <div class="form-field">
+      <label for="plan">الباقة الجديدة</label>
+      <select name="plan" id="plan">
+        {% for p in plans %}
+          <option value="{{ p.code.value }}"
+            {% if subscription and subscription.plan_id == p.id %}selected{% endif %}>
+            {{ p.name_ar }} — {{ "%.0f"|format(p.price_monthly_sar) }} ر.س/شهر
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>طريقة الفوترة</label>
+      <label><input type="radio" name="period" value="monthly" {% if not subscription or subscription.period.value == "monthly" %}checked{% endif %}> شهري</label>
+      <label><input type="radio" name="period" value="yearly" {% if subscription and subscription.period.value == "yearly" %}checked{% endif %}> سنوي (وفّر 20٪)</label>
+    </div>
+    <button class="btn btn-accent" type="submit">تأكيد الترقية</button>
+    <p class="muted small">
+      ⚠ هذه نسخة تطويرية: يُفعَّل الاشتراك مباشرة بدون بوابة دفع. للاندماج
+      مع <a href="https://moyasar.com" target="_blank">ميسر</a> أو
+      <a href="https://www.tap.company" target="_blank">Tap</a>، تواصل مع الدعم.
+    </p>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}الصفحات المخصصة{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav class="breadcrumbs"><a href="/tenant/settings">← إعدادات المنصة</a></nav>
+  <h1>الصفحات المخصصة</h1>
+  <p class="muted">
+    أضف صفحات تعريفية إضافية (الأسئلة الشائعة، عن الفريق، الشركاء…) تظهر تحت الرابط
+    <code>/p/&lt;الرمز&gt;</code> ويمكن إدراجها في القائمة الرئيسية.
+  </p>
+
+  <p><a class="btn btn-accent" href="/tenant/pages/new">+ صفحة جديدة</a></p>
+
+  {% if pages %}
+    <table>
+      <thead><tr><th>العنوان</th><th>الرمز</th><th>الحالة</th><th>قائمة</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        {% for p in pages %}
+          <tr>
+            <td>{{ p.title_ar }}</td>
+            <td><code>/p/{{ p.slug }}</code></td>
+            <td>{% if p.is_published %}<span class="badge approved">منشورة</span>{% else %}<span class="badge">مسودة</span>{% endif %}</td>
+            <td>{{ "✓" if p.show_in_nav else "—" }}</td>
+            <td class="flex flex-wrap" style="gap:0.25rem">
+              <a class="btn btn-sm" href="/tenant/pages/{{ p.id }}/edit">تحرير</a>
+              <a class="btn btn-sm btn-outline" href="/p/{{ p.slug }}" target="_blank">عرض</a>
+              <form method="post" action="/tenant/pages/{{ p.id }}/delete" onsubmit="return confirm('حذف الصفحة؟')" style="display:inline">
+                <button class="btn btn-sm btn-danger" type="submit">حذف</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">لم تُنشئ صفحات مخصصة بعد.</div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -25,6 +25,7 @@ from .routers import (
     lessons,
     pages,
     quizzes,
+    saas,
     student,
     teacher,
     xapi,
@@ -75,6 +76,12 @@ def create_app() -> FastAPI:
     app.include_router(student.router)
     app.include_router(teacher.router)
     app.include_router(admin.router)
+    app.include_router(saas.router)
+
+    # Inject tenant + helpers into every template context
+    from .templating import install_template_globals
+
+    install_template_globals(app)
 
     @app.on_event("startup")
     def _startup() -> None:
