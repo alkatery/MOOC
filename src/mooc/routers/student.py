@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from ..config import get_settings
 from ..database import get_db
 from ..models import (
+    Assignment,
+    AssignmentSubmission,
     Certificate,
     Course,
     CourseStatus,
@@ -279,6 +281,25 @@ async def quiz_submit(
     if not enrollment:
         raise HTTPException(status_code=403, detail="سجّل في المقرر أولاً")
 
+    if quiz.max_attempts and quiz.max_attempts > 0:
+        prior_count = (
+            db.query(QuizAttempt)
+            .filter(
+                QuizAttempt.quiz_id == quiz_id,
+                QuizAttempt.user_id == user.id,
+                QuizAttempt.submitted_at.isnot(None),
+            )
+            .count()
+        )
+        if prior_count >= quiz.max_attempts:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"لقد استنفدت الحد الأقصى للمحاولات ({quiz.max_attempts}). "
+                    "تواصل مع المعلم لإعادة فتح الاختبار."
+                ),
+            )
+
     form = await request.form()
     answers = {}
     for key, value in form.multi_items():
@@ -386,4 +407,95 @@ def post_thread(
     db.commit()
     return RedirectResponse(
         f"/student/course/{course_id}", status_code=status.HTTP_303_SEE_OTHER
+    )
+
+
+# ---------------------------------------------------------------------------
+# Assignments
+# ---------------------------------------------------------------------------
+
+
+def _enrolled_or_403(db: Session, user: User, course_id: int) -> Enrollment:
+    enrollment = (
+        db.query(Enrollment)
+        .filter(Enrollment.user_id == user.id, Enrollment.course_id == course_id)
+        .first()
+    )
+    if not enrollment:
+        raise HTTPException(status_code=403, detail="سجّل في المقرر أولاً")
+    return enrollment
+
+
+@router.get(
+    "/course/{course_id}/assignment/{assignment_id}", response_class=HTMLResponse
+)
+def assignment_view(
+    course_id: int,
+    assignment_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_student_access),
+):
+    _enrolled_or_403(db, user, course_id)
+    assignment = (
+        db.query(Assignment)
+        .filter(Assignment.id == assignment_id, Assignment.course_id == course_id)
+        .first()
+    )
+    if not assignment:
+        raise HTTPException(status_code=404, detail="الواجب غير موجود")
+    submission = (
+        db.query(AssignmentSubmission)
+        .filter(
+            AssignmentSubmission.assignment_id == assignment_id,
+            AssignmentSubmission.user_id == user.id,
+        )
+        .order_by(AssignmentSubmission.submitted_at.desc())
+        .first()
+    )
+    return templates.TemplateResponse(
+        request,
+        "student/assignment.html",
+        _ctx(
+            request,
+            user,
+            assignment=assignment,
+            course=assignment.course,
+            submission=submission,
+        ),
+    )
+
+
+@router.post("/course/{course_id}/assignment/{assignment_id}/submit")
+def assignment_submit(
+    course_id: int,
+    assignment_id: int,
+    content: str = Form(...),
+    attachment_url: str = Form(""),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_student_access),
+):
+    _enrolled_or_403(db, user, course_id)
+    assignment = (
+        db.query(Assignment)
+        .filter(Assignment.id == assignment_id, Assignment.course_id == course_id)
+        .first()
+    )
+    if not assignment:
+        raise HTTPException(status_code=404, detail="الواجب غير موجود")
+    submission = AssignmentSubmission(
+        assignment_id=assignment_id,
+        user_id=user.id,
+        content=content,
+        attachment_url=attachment_url or None,
+    )
+    db.add(submission)
+    xapi.record_statement(
+        db, user, "submitted", "assignment", assignment.id, commit=False
+    )
+    audit_log(db, user, "assignment.submit", "assignment", assignment.id)
+    db.commit()
+    return RedirectResponse(
+        f"/student/course/{course_id}/assignment/{assignment_id}",
+        status_code=status.HTTP_303_SEE_OTHER,
     )

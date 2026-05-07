@@ -5,12 +5,22 @@
   <article class="card">
     <h1>{{ quiz.title_ar }}</h1>
     {% if quiz.instructions_ar %}<p>{{ quiz.instructions_ar }}</p>{% endif %}
+    {% set used = attempts|selectattr("submitted_at")|list|length %}
+    {% set remaining = (quiz.max_attempts - used) if quiz.max_attempts else None %}
     <div class="muted flex flex-wrap mt-1">
       <span>⏱ الحد الزمني: {{ quiz.time_limit_minutes }} د</span>
       <span>🎯 درجة النجاح: {{ quiz.passing_score }}٪</span>
-      <span>🔁 الحد الأقصى للمحاولات: {{ quiz.max_attempts }}</span>
+      <span>🔁 الحد الأقصى للمحاولات: {{ quiz.max_attempts or "غير محدود" }}</span>
       <span>📚 عدد الأسئلة: {{ quiz.questions|length }}</span>
     </div>
+    {% if quiz.max_attempts %}
+      <p class="muted mt-1">
+        <strong>المحاولة {{ used + 1 }} من {{ quiz.max_attempts }}</strong>
+        {% if remaining is not none and remaining <= 0 %}
+          — لقد استنفدت كافة المحاولات.
+        {% endif %}
+      </p>
+    {% endif %}
 
     <form method="post" action="/student/quiz/{{ quiz.id }}/submit" class="stacked mt-3">
       {% for question in quiz.questions %}

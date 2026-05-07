@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}مقالات بانتظار التصحيح{% endblock %}
+{% block content %}
+<section class="container mt-4">
+  <nav><a href="/teacher">← لوحة المعلم</a></nav>
+  <h1>المقالات بانتظار التصحيح</h1>
+  {% if pending %}
+    <table>
+      <thead><tr><th>الاختبار</th><th>المقرر</th><th>عدد الأسئلة المقالية</th><th>تم التسليم</th><th></th></tr></thead>
+      <tbody>
+        {% for row in pending %}
+          <tr>
+            <td>{{ row.attempt.quiz.title_ar }}</td>
+            <td>{{ row.attempt.quiz.lesson.module.course.title_ar }}</td>
+            <td>{{ row.ungraded_count }} / {{ row.questions|length }}</td>
+            <td>{{ row.attempt.submitted_at.strftime("%Y-%m-%d %H:%M") }}</td>
+            <td><a class="btn btn-sm" href="/teacher/attempts/{{ row.attempt.id }}/grade-essays">تصحيح</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">لا توجد مقالات بانتظار التصحيح حالياً.</div>
+  {% endif %}
+</section>
+{% endblock %}
